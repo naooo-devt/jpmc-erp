@@ -1,0 +1,14 @@
+{
+    "name": "james-polymer/erp",
+    "description": "ERP system for James Polymer Manufacturing Corporation.",
+    "require": {
+        "fpdf/fpdf": "^1.8",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "you@example.com"
+        }
+    ]
+}

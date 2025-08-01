@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Test</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        body { padding: 50px; font-family: Arial, sans-serif; }
+        .test-container { max-width: 500px; margin: 0 auto; }
+        .test-section { margin: 30px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Toggle Switch Test</h1>
+        
+        <div class="test-section">
+            <h3>Transaction Type Toggle</h3>
+            <div class="form-group">
+                <label>Transaction Type</label>
+                <div class="transaction-type-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="transactionTypeToggle">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label-left">Material Out</span>
+                        <span class="toggle-label-right">Material In</span>
+                    </label>
+                </div>
+                <input type="hidden" id="transType" name="type" value="OUT" required>
+            </div>
+            <p>Current Value: <span id="currentValue">OUT</span></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('transactionTypeToggle');
+            const hiddenInput = document.getElementById('transType');
+            const currentValue = document.getElementById('currentValue');
+            
+            if (toggle && hiddenInput) {
+                toggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        hiddenInput.value = 'IN';
+                        currentValue.textContent = 'IN';
+                    } else {
+                        hiddenInput.value = 'OUT';
+                        currentValue.textContent = 'OUT';
+                    }
+                    console.log('Toggle changed to:', hiddenInput.value);
+                });
+                
+                console.log('Toggle test initialized successfully');
+            } else {
+                console.error('Toggle elements not found');
+            }
+        });
+    </script>
+</body>
+</html> 
