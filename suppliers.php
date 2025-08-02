@@ -627,67 +627,8 @@ $all_raw_materials_result = $conn->query($all_raw_materials_sql);
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="company-logo">
-                <img src="images/logo.png" alt="Company Logo">
-            </div>
-            <div class="company-name">James Polymer</div>
-            <div class="company-subtitle">Manufacturing Corporation</div>
-        </div>
-        <div class="sidebar-menu">
-            <div class="menu-section">
-                <div class="menu-section-title">Main Navigation</div>
-                <a href="index.php" class="menu-item" data-module="dashboard">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="finances.php" class="menu-item" data-module="finances">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <span>Finances</span>
-                </a>
-                <a href="human_resources.php" class="menu-item" data-module="human-resources">
-                    <i class="fas fa-users"></i>
-                    <span>Human Resources</span>
-                </a>
-                <div class="menu-item menu-dropdown open" id="supplyChainDropdown">
-                    <i class="fas fa-link"></i>
-                    <span>Inventory</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="dropdown-menu open" id="supplyChainDropdownMenu">
-                    <a href="supply_chain.php" class="menu-item" data-module="manufacturing">
-                        <i class="fas fa-industry"></i>
-                        <span>Manufacturing</span>
-                    </a>
-                    <a href="transactions.php" class="menu-item active" data-module="suppliers">
-                        <i class="fas fa-users"></i>
-                        <span>Transaction</span>
-                    </a>
-                </div>
-                <a href="transactions.php" class="menu-item" data-module="customer-service">
-                    <i class="fas fa-headset"></i>
-                    <span>Customer Service</span>
-                </a>
-                <a href="reports.php" class="menu-item" data-module="reports">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Reports</span>
-                </a>
-            </div>
-            <div class="menu-section">
-                <div class="menu-section-title">System</div>
-                <a href="finished_goods.php" class="menu-item" data-module="system-admin">
-                    <i class="fas fa-cog"></i>
-                    <span>System Administration</span>
-                </a>
-                <a href="logout.php" class="menu-item" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </div>
+    <!--SideBar MENU -->
+    <?php include 'sidebar.php'; ?>
 
     <!-- Main Content Area -->
     <div class="main-content">
@@ -1207,4 +1148,5 @@ $all_raw_materials_result = $conn->query($all_raw_materials_sql);
         });
     </script>
 </body>
+
 </html> 
