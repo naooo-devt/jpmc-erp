@@ -88,29 +88,41 @@ document.addEventListener('DOMContentLoaded', function () {
     const dropdownToggle = document.getElementById('inventoryDropdown');
     const dropdownMenu = document.getElementById('inventoryDropdownMenu');
 
-    // Pages considered part of the Supply Chain dropdown
     const childPages = ['supply_chain.php', 'suppliers.php'];
     const currentPage = window.location.pathname.split('/').pop();
 
-    // Check if user manually toggled the dropdown
     let state = sessionStorage.getItem('supplyChainOpen');
 
-    // If user hasn't toggled manually yet, default to open if on a child page
-    if (state === null && childPages.includes(currentPage)) {
-        sessionStorage.setItem('supplyChainOpen', 'true');
-        state = 'true';
+    function updateDropdownState(open) {
+        if (open) {
+            dropdownToggle.classList.add('open', 'active');
+            dropdownMenu.classList.add('open');
+        } else {
+            dropdownToggle.classList.remove('open', 'active');
+            dropdownMenu.classList.remove('open');
+        }
     }
 
-    if (state === 'true') {
-        dropdownToggle.classList.add('open', 'active');
-        dropdownMenu.classList.add('open');
+    // If current page is a Supply Chain page
+    if (childPages.includes(currentPage)) {
+        if (state === null) {
+            state = 'true';
+            sessionStorage.setItem('supplyChainOpen', 'true');
+        }
+        updateDropdownState(state === 'true');
+    } else {
+        // On any other page, force it closed
+        sessionStorage.setItem('supplyChainOpen', 'false');
+        updateDropdownState(false);
     }
 
+    // Handle user toggle
     dropdownToggle.addEventListener('click', function () {
         const isOpen = dropdownMenu.classList.toggle('open');
-        dropdownToggle.classList.toggle('open');
+        dropdownToggle.classList.toggle('open', isOpen);
         dropdownToggle.classList.toggle('active', isOpen);
         sessionStorage.setItem('supplyChainOpen', isOpen.toString());
     });
 });
+
 </script>
