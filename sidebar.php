@@ -2,6 +2,7 @@
 $currentPage = basename($_SERVER['PHP_SELF']);
 $supplyChainPages = ['supply_chain.php', 'suppliers.php'];
 $isSupplyChainPage = in_array($currentPage, $supplyChainPages);
+$isCustomerServicePage = ($currentPage === 'customer_service.php');
 ?>
 
 <div class="sidebar">
@@ -43,7 +44,7 @@ $isSupplyChainPage = in_array($currentPage, $supplyChainPages);
             </div>
 
             <!-- Dropdown Menu -->
-           <div class="dropdown-menu" id="inventoryDropdownMenu">
+            <div class="dropdown-menu" id="inventoryDropdownMenu">
                 <a href="supply_chain.php" class="menu-item <?= ($currentPage == 'supply_chain.php') ? 'active' : '' ?>">
                     <i class="fas fa-industry"></i>
                     <span>Manufacturing</span>
@@ -81,7 +82,20 @@ $isSupplyChainPage = in_array($currentPage, $supplyChainPages);
     </div>
 </div>
 
-<?php include 'chatbot_panel.php'; ?>
+<!-- Conditionally include chatbot -->
+<?php if (!$isCustomerServicePage): ?>
+    <?php include 'chatbot_panel.php'; ?>
+<?php endif; ?>
+
+<!-- Optional: Extra CSS to fully hide chatbot if it has a floating icon -->
+<style>
+<?php if ($isCustomerServicePage): ?>
+    #chatbot-float-icon, .chatbot-float {
+        display: none !important;
+        pointer-events: none;
+    }
+<?php endif; ?>
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -97,9 +111,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (open) {
             dropdownToggle.classList.add('open', 'active');
             dropdownMenu.classList.add('open');
+            dropdownMenu.style.display = 'block';
         } else {
             dropdownToggle.classList.remove('open', 'active');
             dropdownMenu.classList.remove('open');
+            dropdownMenu.style.display = 'none';
         }
     }
 
@@ -121,8 +137,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const isOpen = dropdownMenu.classList.toggle('open');
         dropdownToggle.classList.toggle('open', isOpen);
         dropdownToggle.classList.toggle('active', isOpen);
+        dropdownMenu.style.display = isOpen ? 'block' : 'none';
         sessionStorage.setItem('supplyChainOpen', isOpen.toString());
     });
 });
-
 </script>
