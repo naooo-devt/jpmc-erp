@@ -81,10 +81,9 @@ $net_profit = $total_revenue - $total_expenses;
     <link rel="icon" href="images/logo.png">
 </head>
 <body>
-    8:57 AM
-Moonlight🌕✨
-  <!--SideBar MENU -->
+    <!--SideBar MENU -->
     <?php include 'sidebar.php'; ?>
+
     <!-- Main Content Area (Dashboard only) -->
     <div class="main-content">
         <div class="header">
