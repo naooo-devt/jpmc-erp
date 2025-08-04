@@ -1025,7 +1025,8 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
     </style>
 </head>
 <body>
-    <!--SideBar MENU -->
+    <!-- Sidebar Navigation -->
+        <!--SideBar MENU -->
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content Area -->

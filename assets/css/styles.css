@@ -764,7 +764,32 @@ body {
     margin-bottom: 0;
 }
 
-.table-actions { display: flex; gap: 0.75rem; }
+.table-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+
+.table-actions .btn {
+    min-width: 0;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.table-actions .action-text {
+    display: none; /* Hide text on small screens for compactness */
+}
+
+@media (max-width: 600px) {
+    .table-actions .btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
 .table-responsive { 
     overflow-x: auto; 
     -webkit-overflow-scrolling: touch; 
@@ -1301,12 +1326,6 @@ textarea.form-input { min-height: 100px; resize: vertical; }
         padding: 10px 16px;
         font-size: 0.8rem;
         flex: 1;
-    }
-    
-    .transaction-filters .filter-group select,
-    .transaction-filters .filter-group input {
-        padding: 1rem 1.25rem;
-        min-height: 48px;
     }
     
     .modal-content {

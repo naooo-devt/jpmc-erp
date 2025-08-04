@@ -165,9 +165,249 @@ $suppliers_result = $conn->query($suppliers_sql);
             color: #991b1b;
             border: 1px solid #fecaca;
         }
+
+        /* Improved Material Filter Styling */
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+        .filter-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #4b5563;
+            font-size: 0.875rem;
+        }
+        .filter-select-wrapper {
+            position: relative;
+            width: 240px;
+            max-width: 100%;
+        }
+        .filter-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            padding: 0.625rem 1rem;
+            padding-right: 2.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #fff;
+            color: #374151;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: border 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            font-weight: 500;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px #2563eb33;
+        }
+        .filter-select-arrow {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #6b7280;
+            font-size: 1rem;
+        }
+        .filter-select option {
+            padding: 0.5rem 1rem;
+        }
+        .filter-select option[data-color] {
+            position: relative;
+            padding-left: 1.75rem;
+        }
+        .filter-select option[data-color]::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0.875rem;
+            height: 0.875rem;
+            border-radius: 50%;
+            background-color: var(--color, #d1d5db);
+        }
+        @media (max-width: 600px) {
+            .filter-select-wrapper {
+                width: 100%;
+            }
+        }
+
+        /* --- Add to your <style> section or stylesheet --- */
+        /* filepath: c:\xampp\htdocs\ERP\transactions.php */
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            flex: 1 1 0;
+            padding: 0.9rem 1.5rem;
+            border: 2px solid #2563eb;
+            background: #fff;
+            color: #2563eb;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, border 0.2s;
+            outline: none;
+            box-shadow: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .filter-btn.active,
+        .filter-btn:focus,
+        .filter-btn:hover {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
+
+        /* Responsive fix for Material Transactions filter tabs */
+        /* filepath: c:\xampp\htdocs\ERP\transactions.php */
+
+        .transaction-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            min-width: 180px;
+            flex: 1 1 220px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            flex: 1 1 0;
+            min-width: 120px;
+            padding: 0.9rem 0.5rem;
+            font-size: 1rem;
+            border-radius: 0.75rem;
+            white-space: nowrap;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1100px) {
+            .transaction-filters {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            .filter-group {
+                width: 100%;
+                min-width: 0;
+            }
+            .filter-buttons {
+                flex-direction: row;
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .filter-btn {
+                width: 100%;
+                font-size: 0.98rem;
+                padding: 0.7rem 0.5rem;
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .transaction-filters {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .filter-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .filter-btn {
+                width: 100%;
+                font-size: 0.96rem;
+                padding: 0.7rem 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="company-logo">
+                <img src="images/logo.png" alt="Company Logo" style="width: 60px; height: 60px; border-radius: 12px; object-fit: contain; display: block;">
+            </div>
+            <div class="company-name">James Polymer</div>
+            <div class="company-subtitle">Manufacturing Corporation</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-section-title">Main Navigation</div>
+                <a href="index.php" class="menu-item" data-module="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="finances.php" class="menu-item" data-module="finances">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Finances</span>
+                </a>
+                <a href="human_resources.php" class="menu-item" data-module="human-resources">
+                    <i class="fas fa-users"></i>
+                    <span>Human Resources</span>
+                </a>
+                <div class="menu-item menu-dropdown open" id="supplyChainDropdown">
+                    <i class="fas fa-link"></i>
+                    <span>Inventory</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="dropdown-menu open" id="supplyChainDropdownMenu">
+                    <a href="supply_chain.php" class="menu-item<?php if(basename($_SERVER['PHP_SELF']) == 'supply_chain.php') echo ' active'; ?>" data-module="manufacturing">
+                        <i class="fas fa-industry"></i>
+                        <span>Manufacturing</span>
+                    </a>
+                    <a href="transactions.php" class="menu-item<?php if(basename($_SERVER['PHP_SELF']) == 'transactions.php') echo ' active'; ?>" data-module="transactions">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transactions</span>
+                    </a>
+                </div>
+                <a href="customer_service.php" class="menu-item<?php if(basename($_SERVER['PHP_SELF']) == 'customer_service.php') echo ' active'; ?>" data-module="customer-service">
+                    <i class="fas fa-headset"></i>
+                    <span>Customer Service</span>
+                </a>
+                <a href="reports.php" class="menu-item" data-module="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-section-title">System</div>
+                <a href="finished_goods.php" class="menu-item" data-module="system-admin">
+                    <i class="fas fa-cog"></i>
+                    <span>System Administration</span>
+                </a>
+                <a href="logout.php" class="menu-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
     <!-- Main Content Area -->
     <div class="main-content">
         <div class="header">
@@ -232,9 +472,9 @@ $suppliers_result = $conn->query($suppliers_sql);
 
             <!-- Transactions Tab -->
             <div class="module-content active" id="transactions">
-                <div class="section-header">
-                    <h2>Material Transactions</h2>
-                    <div class="actions">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0;">Material Transactions</h2>
+                    <div class="actions" style="display: flex; gap: 10px;">
                         <button class="btn btn-primary" id="addTransactionBtn">
                             <i class="fas fa-plus"></i> New Transaction
                         </button>
@@ -260,24 +500,27 @@ $suppliers_result = $conn->query($suppliers_sql);
                         <input type="hidden" id="transTypeFilter" value="all">
                     </div>
                     <div class="filter-group">
-                        <label for="transMaterialFilter">Material:</label>
-                        <select id="transMaterialFilter">
-                            <option value="all">All Materials</option>
-                            <?php
-                            if ($raw_materials_for_modals && $raw_materials_for_modals->num_rows > 0) {
-                                $raw_materials_for_modals->data_seek(0);
-                                while($row = $raw_materials_for_modals->fetch_assoc()) {
-                                    echo "<option value='" . htmlspecialchars($row['id']) . "'>" . htmlspecialchars($row['name']) . "</option>";
+                        <label for="transMaterialFilter" class="filter-label">Material:</label>
+                        <div class="filter-select-wrapper">
+                            <select id="transMaterialFilter" class="filter-select">
+                                <option value="all">All Materials</option>
+                                <?php
+                                if ($raw_materials_for_modals && $raw_materials_for_modals->num_rows > 0) {
+                                    $raw_materials_for_modals->data_seek(0);
+                                    while($row = $raw_materials_for_modals->fetch_assoc()) {
+                                        // Use code_color as a CSS color if available, fallback to gray
+                                        $color = !empty($row['code_color']) ? htmlspecialchars($row['code_color']) : '#d1d5db';
+                                        echo "<option value='" . htmlspecialchars($row['id']) . "' data-color='$color'>" . htmlspecialchars($row['name']) . "</option>";
+                                    }
+                                } else {
+                                    echo "<option value='1'>Test Material 1</option>";
+                                    echo "<option value='2'>Test Material 2</option>";
+                                    echo "<option value='3'>Test Material 3</option>";
                                 }
-                            } else {
-                                echo "<!-- No materials found or query failed -->";
-                                // Fallback: Add some test options
-                                echo "<option value='1'>Test Material 1</option>";
-                                echo "<option value='2'>Test Material 2</option>";
-                                echo "<option value='3'>Test Material 3</option>";
-                            }
-                            ?>
-                        </select>
+                                ?>
+                            </select>
+                            <span class="filter-select-arrow"><i class="fas fa-chevron-down"></i></span>
+                        </div>
                     </div>
 
                     <button class="btn btn-outline" id="clearTransactionFilters">
@@ -1088,7 +1331,6 @@ $suppliers_result = $conn->query($suppliers_sql);
         </div>
     </div>
 
-    <!-- Delete Supplier Modal -->
     <div id="deleteSupplierModal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('deleteSupplierModal')">&times;</span>
@@ -1163,7 +1405,18 @@ $suppliers_result = $conn->query($suppliers_sql);
                 event.target.style.display = 'none';
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set color dot for material options
+            const select = document.getElementById('transMaterialFilter');
+            if (select) {
+                Array.from(select.options).forEach(option => {
+                    if (option.dataset.color) {
+                        option.style.setProperty('--color', option.dataset.color);
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
-

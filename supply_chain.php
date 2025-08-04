@@ -1184,7 +1184,8 @@ $avg_delivery_time = $conn->query("
     </style>
 </head>
 <body>
-    <!--SideBar MENU -->
+    <!-- Sidebar Navigation -->
+        <!--SideBar MENU -->
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content Area -->
@@ -1207,7 +1208,7 @@ $avg_delivery_time = $conn->query("
             <!-- Manufacturing Navigation Tabs -->
             <div class="manufacturing-nav">
                 <div class="finance-tabs">
-                    <button class="finance-tab" data-tab="schedule">
+                    <button class="finance-tab active" data-tab="schedule">
                         <i class="fas fa-calendar-alt"></i>
                         <span>Calendar</span>
                     </button>
@@ -1219,7 +1220,7 @@ $avg_delivery_time = $conn->query("
                         <i class="fas fa-box"></i>
                         <span>Product Lists</span>
                     </button>
-                    <button class="finance-tab active" data-tab="quality-control">
+                    <button class="finance-tab" data-tab="quality-control">
                         <i class="fas fa-clipboard-check"></i>
                         <span>Quality Control</span>
                     </button>
@@ -1229,9 +1230,13 @@ $avg_delivery_time = $conn->query("
             <!-- Tab Content -->
             <div class="tab-content">
                 <!-- Schedule Tab -->
-                <div class="tab-pane" id="schedule">
+                <div class="tab-pane active" id="schedule">
                     <h2>Production Calendar</h2>
-                    <p>Schedule management content will go here.</p>
+                    <div style="max-width:900px;margin:0 auto;">
+                        <!-- Literal Calendar -->
+                        <div id="calendar" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:20px; margin-bottom:32px;"></div>
+                    </div>
+                    <p style="margin-top:1rem;">Schedule management content will go here.</p>
                 </div>
 
                 <!-- Raw Materials Tab -->
@@ -1388,7 +1393,7 @@ $avg_delivery_time = $conn->query("
                 </div>
 
                 <!-- Quality Control Tab -->
-                <div class="tab-pane active" id="quality-control">
+                <div class="tab-pane" id="quality-control">
                     <div class="quality-control-content">
                         <h2>OPERATORS TALLY SHEET</h2>
                         <div class="tally-sheet">
@@ -1481,7 +1486,7 @@ $avg_delivery_time = $conn->query("
                                             <th>DESCRIPTION</th>
                                             <th>GOOD</th>
                                             <th>REJECT</th>
-                                            <th>REJECT</th>
+                                            <th>REMARKS</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1666,258 +1671,285 @@ $avg_delivery_time = $conn->query("
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="assets/js/script.js"></script>
+    <!-- Add FullCalendar CSS/JS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
         // Tab functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabs = document.querySelectorAll('.tab');
-            const modules = document.querySelectorAll('.module-content');
-            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-            const sidebar = document.querySelector('.sidebar');
+        const tabs = document.querySelectorAll('.tab');
+        const modules = document.querySelectorAll('.module-content');
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.querySelector('.sidebar');
 
-            // Tab switching - Updated for standardized finance-tab classes
-            // Handle manufacturing navigation tabs (first set)
-            const manufacturingTabs = document.querySelectorAll('.finance-tab[data-tab="schedule"], .finance-tab[data-tab="raw-materials"], .finance-tab[data-tab="products"], .finance-tab[data-tab="quality-control"]');
-            const tabPanes = document.querySelectorAll('.tab-pane');
-            
-            manufacturingTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const target = tab.getAttribute('data-tab');
-                    
-                    // Remove active class from manufacturing tabs and tab panes
-                    manufacturingTabs.forEach(t => t.classList.remove('active'));
-                    tabPanes.forEach(p => p.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding tab pane
-                    tab.classList.add('active');
-                    const targetPane = document.getElementById(target);
-                    if (targetPane) {
-                        targetPane.classList.add('active');
-                    }
-                    
-                    console.log('Manufacturing tab clicked:', target);
-                    
-                    // Add visual feedback
-                    tab.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        tab.style.transform = '';
-                    }, 150);
-                });
-            });
-            
-            // Handle secondary tabs (second set)
-            const secondaryTabs = document.querySelectorAll('.finance-tab[data-tab="suppliers"], .finance-tab[data-tab="purchase-orders"], .finance-tab[data-tab="deliveries"], .finance-tab[data-tab="analytics"]');
-            const moduleContents = document.querySelectorAll('.module-content');
-            
-            secondaryTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const target = tab.getAttribute('data-tab');
-                    
-                    // Remove active class from secondary tabs and module contents
-                    secondaryTabs.forEach(t => t.classList.remove('active'));
-                    moduleContents.forEach(m => m.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding module content
-                    tab.classList.add('active');
-                    const targetModule = document.getElementById(target);
-                    if (targetModule) {
-                        targetModule.classList.add('active');
-                    }
-                    
-                    console.log('Secondary tab clicked:', target);
-                    
-                    // Add visual feedback
-                    tab.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        tab.style.transform = '';
-                    }, 150);
-                });
-            });
-
-            // Mobile menu toggle
-            if (mobileMenuToggle) {
-                mobileMenuToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('active');
-                });
-            }
-
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (sidebar && sidebar.classList.contains('active')) {
-                    if (!sidebar.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
-                        sidebar.classList.remove('active');
-                    }
+        // Tab switching - Updated for standardized finance-tab classes
+        // Handle manufacturing navigation tabs (first set)
+        const manufacturingTabs = document.querySelectorAll('.finance-tab[data-tab="schedule"], .finance-tab[data-tab="raw-materials"], .finance-tab[data-tab="products"], .finance-tab[data-tab="quality-control"]');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        manufacturingTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.getAttribute('data-tab');
+                
+                // Remove active class from manufacturing tabs and tab panes
+                manufacturingTabs.forEach(t => t.classList.remove('active'));
+                tabPanes.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding tab pane
+                tab.classList.add('active');
+                const targetPane = document.getElementById(target);
+                if (targetPane) {
+                    targetPane.classList.add('active');
                 }
+                
+                console.log('Manufacturing tab clicked:', target);
+                
+                // Add visual feedback
+                tab.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    tab.style.transform = '';
+                }, 150);
             });
+        });
+        
+        // Handle secondary tabs (second set)
+        const secondaryTabs = document.querySelectorAll('.finance-tab[data-tab="suppliers"], .finance-tab[data-tab="purchase-orders"], .finance-tab[data-tab="deliveries"], .finance-tab[data-tab="analytics"]');
+        const moduleContents = document.querySelectorAll('.module-content');
+        
+        secondaryTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.getAttribute('data-tab');
+                
+                // Remove active class from secondary tabs and module contents
+                secondaryTabs.forEach(t => t.classList.remove('active'));
+                moduleContents.forEach(m => m.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding module content
+                tab.classList.add('active');
+                const targetModule = document.getElementById(target);
+                if (targetModule) {
+                    targetModule.classList.add('active');
+                }
+                
+                console.log('Secondary tab clicked:', target);
+                
+                // Add visual feedback
+                tab.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    tab.style.transform = '';
+                }, 150);
+            });
+        });
 
-            // Dropdown functionality
-            const supplyChainDropdown = document.getElementById('supplyChainDropdown');
-            const supplyChainDropdownMenu = document.getElementById('supplyChainDropdownMenu');
-            
-            if (supplyChainDropdown) {
-                supplyChainDropdown.addEventListener('click', function() {
-                    supplyChainDropdownMenu.classList.toggle('active');
-                });
-            }
+        // Mobile menu toggle
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+        }
 
-            // Logout functionality
-            const logoutBtn = document.getElementById('logoutBtn');
-            if(logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.stopPropagation(); 
-                });
-            }
-
-            // Handle window resize
-            function handleResize() {
-                if (window.innerWidth > 768) {
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (sidebar && sidebar.classList.contains('active')) {
+                if (!sidebar.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
                     sidebar.classList.remove('active');
                 }
             }
-
-            window.addEventListener('resize', handleResize);
-
-            // Initialize responsive behavior
-            handleResize();
         });
 
-        // Modal functions (to be implemented)
-        function openModal(modalId) {
-            // Implementation for opening modals
-            console.log('Opening modal:', modalId);
+        // Dropdown functionality
+        const supplyChainDropdown = document.getElementById('supplyChainDropdown');
+        const supplyChainDropdownMenu = document.getElementById('supplyChainDropdownMenu');
+        
+        if (supplyChainDropdown) {
+            supplyChainDropdown.addEventListener('click', function() {
+                supplyChainDropdownMenu.classList.toggle('active');
+            });
         }
 
-        function editSupplier(id) {
-            console.log('Edit supplier:', id);
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); 
+            });
         }
 
-        function deleteSupplier(id) {
-            if (confirm('Are you sure you want to delete this supplier?')) {
-                console.log('Delete supplier:', id);
+        // Handle window resize
+        function handleResize() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
             }
         }
 
-        function viewOrder(id) {
-            console.log('View order:', id);
+        window.addEventListener('resize', handleResize);
+
+        // Initialize responsive behavior
+        handleResize();
+
+        // Literal Calendar using FullCalendar
+        if (document.getElementById('calendar')) {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                height: 500,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: [
+                    // Example events, replace with your dynamic data if needed
+                    {
+                        title: 'Production Run A',
+                        start: new Date().toISOString().slice(0,10)
+                    },
+                    {
+                        title: 'Maintenance',
+                        start: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString().slice(0,10),
+                        color: '#f59e0b'
+                    }
+                ]
+            });
+            calendar.render();
+        }
+    });
+
+    // Modal functions (to be implemented)
+    function openModal(modalId) {
+        // Implementation for opening modals
+        console.log('Opening modal:', modalId);
+    }
+
+    function editSupplier(id) {
+        console.log('Edit supplier:', id);
+    }
+
+    function deleteSupplier(id) {
+        if (confirm('Are you sure you want to delete this supplier?')) {
+            console.log('Delete supplier:', id);
+        }
+    }
+
+    function viewOrder(id) {
+        console.log('View order:', id);
+    }
+
+    function createDelivery(id) {
+        console.log('Create delivery for order:', id);
+    }
+
+    function viewDelivery(id) {
+        console.log('View delivery:', id);
+    }
+
+    function receiveDelivery(id) {
+        console.log('Receive delivery:', id);
+    }
+
+    // Raw Materials Modal Functions
+    function openAddMaterialModal() {
+        document.getElementById('addMaterialModal').style.display = 'flex';
+    }
+
+    function closeAddMaterialModal() {
+        document.getElementById('addMaterialModal').style.display = 'none';
+    }
+
+    function openViewRawMaterialModal(id) {
+       
+        // Fetch material data and populate modal
+        console.log('View raw material:', id);
+        document.getElementById('viewRawMaterialModal').style.display = 'flex';
+    }
+
+    function closeViewRawMaterialModal() {
+        document.getElementById('viewRawMaterialModal').style.display = 'none';
+    }
+
+    function openEditRawMaterialModal(id) {
+        // Fetch material data and populate modal
+        console.log('Edit raw material:', id);
+        document.getElementById('editRawMaterialModal').style.display = 'flex';
+    }
+
+    function closeEditRawMaterialModal() {
+        document.getElementById('editRawMaterialModal').style.display = 'none';
+    }
+
+    function deleteRawMaterial(id) {
+        if (confirm('Are you sure you want to delete this raw material?')) {
+            window.location.href = 'delete_material.php?id=' + id;
+        }
+    }
+
+    // Initialize raw materials functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Material Modal
+        const openAddMaterialBtn = document.getElementById('openAddMaterialModal');
+        const closeAddMaterialBtn = document.getElementById('closeAddMaterialModal');
+        const cancelAddMaterialBtn = document.getElementById('cancelAddMaterialModal');
+
+        if (openAddMaterialBtn) {
+            openAddMaterialBtn.addEventListener('click', openAddMaterialModal);
+        }
+        if (closeAddMaterialBtn) {
+            closeAddMaterialBtn.addEventListener('click', closeAddMaterialModal);
+        }
+        if (cancelAddMaterialBtn) {
+            cancelAddMaterialBtn.addEventListener('click', closeAddMaterialModal);
         }
 
-        function createDelivery(id) {
-            console.log('Create delivery for order:', id);
+        // View Raw Material Modal
+        const closeViewRawMaterialBtn = document.getElementById('closeViewRawMaterialModal');
+        if (closeViewRawMaterialBtn) {
+            closeViewRawMaterialBtn.addEventListener('click', closeViewRawMaterialModal);
         }
 
-        function viewDelivery(id) {
-            console.log('View delivery:', id);
+        // Edit Raw Material Modal
+        const closeEditRawMaterialBtn = document.getElementById('closeEditRawMaterialModal');
+        if (closeEditRawMaterialBtn) {
+            closeEditRawMaterialBtn.addEventListener('click', closeEditRawMaterialModal);
         }
 
-        function receiveDelivery(id) {
-            console.log('Receive delivery:', id);
-        }
-
-        // Raw Materials Modal Functions
-        function openAddMaterialModal() {
-            document.getElementById('addMaterialModal').style.display = 'flex';
-        }
-
-        function closeAddMaterialModal() {
-            document.getElementById('addMaterialModal').style.display = 'none';
-        }
-
-        function openViewRawMaterialModal(id) {
-           
-            // Fetch material data and populate modal
-            console.log('View raw material:', id);
-            document.getElementById('viewRawMaterialModal').style.display = 'flex';
-        }
-
-        function closeViewRawMaterialModal() {
-            document.getElementById('viewRawMaterialModal').style.display = 'none';
-        }
-
-        function openEditRawMaterialModal(id) {
-            // Fetch material data and populate modal
-            console.log('Edit raw material:', id);
-            document.getElementById('editRawMaterialModal').style.display = 'flex';
-        }
-
-        function closeEditRawMaterialModal() {
-            document.getElementById('editRawMaterialModal').style.display = 'none';
-        }
-
-        function deleteRawMaterial(id) {
-            if (confirm('Are you sure you want to delete this raw material?')) {
-                window.location.href = 'delete_material.php?id=' + id;
+        // Raw material action buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('view-raw-btn')) {
+                const id = e.target.getAttribute('data-raw-id');
+                openViewRawMaterialModal(id);
             }
-        }
-
-        // Initialize raw materials functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add Material Modal
-            const openAddMaterialBtn = document.getElementById('openAddMaterialModal');
-            const closeAddMaterialBtn = document.getElementById('closeAddMaterialModal');
-            const cancelAddMaterialBtn = document.getElementById('cancelAddMaterialModal');
-
-            if (openAddMaterialBtn) {
-                openAddMaterialBtn.addEventListener('click', openAddMaterialModal);
+            if (e.target.classList.contains('edit-raw-btn')) {
+                const id = e.target.getAttribute('data-raw-id');
+                openEditRawMaterialModal(id);
             }
-            if (closeAddMaterialBtn) {
-                closeAddMaterialBtn.addEventListener('click', closeAddMaterialModal);
+            if (e.target.classList.contains('delete-raw-btn')) {
+                const id = e.target.getAttribute('data-raw-id');
+                deleteRawMaterial(id);
             }
-            if (cancelAddMaterialBtn) {
-                cancelAddMaterialBtn.addEventListener('click', closeAddMaterialModal);
-            }
+        });
 
-            // View Raw Material Modal
-            const closeViewRawMaterialBtn = document.getElementById('closeViewRawMaterialModal');
-            if (closeViewRawMaterialBtn) {
-                closeViewRawMaterialBtn.addEventListener('click', closeViewRawMaterialModal);
-            }
+        // Search functionality
+        const searchInput = document.getElementById('rawMaterialSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const table = document.getElementById('rawMaterialTable');
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
 
-            // Edit Raw Material Modal
-            const closeEditRawMaterialBtn = document.getElementById('closeEditRawMaterialModal');
-            if (closeEditRawMaterialBtn) {
-                closeEditRawMaterialBtn.addEventListener('click', closeEditRawMaterialModal);
-            }
-
-            // Raw material action buttons
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('view-raw-btn')) {
-                    const id = e.target.getAttribute('data-raw-id');
-                    openViewRawMaterialModal(id);
-                }
-                if (e.target.classList.contains('edit-raw-btn')) {
-                    const id = e.target.getAttribute('data-raw-id');
-                    openEditRawMaterialModal(id);
-                }
-                if (e.target.classList.contains('delete-raw-btn')) {
-                    const id = e.target.getAttribute('data-raw-id');
-                    deleteRawMaterial(id);
+                for (let row of rows) {
+                    const cells = row.getElementsByTagName('td');
+                    let found = false;
+                    for (let cell of cells) {
+                        if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    row.style.display = found ? '' : 'none';
                 }
             });
-
-            // Search functionality
-            const searchInput = document.getElementById('rawMaterialSearchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    const table = document.getElementById('rawMaterialTable');
-                    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-                    for (let row of rows) {
-                        const cells = row.getElementsByTagName('td');
-                        let found = false;
-                        for (let cell of cells) {
-                            if (cell.textContent.toLowerCase().includes(searchTerm)) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        row.style.display = found ? '' : 'none';
-                    }
-                });
-            }
-        });
+        }
+    });
     </script>
 </body>
 </html>

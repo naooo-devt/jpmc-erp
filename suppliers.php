@@ -627,7 +627,8 @@ $all_raw_materials_result = $conn->query($all_raw_materials_sql);
     </style>
 </head>
 <body>
-    <!--SideBar MENU -->
+    <!-- Sidebar Navigation -->
+        <!--SideBar MENU -->
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content Area -->
@@ -1148,5 +1149,4 @@ $all_raw_materials_result = $conn->query($all_raw_materials_sql);
         });
     </script>
 </body>
-
 </html> 

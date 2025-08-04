@@ -21,7 +21,8 @@ $role = htmlspecialchars($_SESSION['role']);
     <link rel="icon" href="images/logo.png">
 </head>
 <body>
-    <!--SideBar MENU -->
+    <!-- Sidebar Navigation -->
+        <!--SideBar MENU -->
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content Area -->
@@ -102,5 +103,4 @@ $role = htmlspecialchars($_SESSION['role']);
         });
     </script>
 </body>
-
 </html> 

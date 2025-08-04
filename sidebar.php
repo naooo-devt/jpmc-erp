@@ -39,7 +39,7 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
             <!-- Dropdown Toggle -->
             <div class="menu-item menu-dropdown" id="inventoryDropdown">
                 <i class="fas fa-link"></i>
-                <span>Supply Chain</span>
+                <span> Inventory </span>
                 <i class="fas fa-chevron-down"></i>
             </div>
 
