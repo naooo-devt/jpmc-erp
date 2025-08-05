@@ -1105,6 +1105,43 @@ $all_raw_materials_result = $conn->query($all_raw_materials_sql);
             openModal('deleteProductModal');
         }
 
+        // AJAX for deleting product
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteProductModal = document.getElementById('deleteProductModal');
+            if (deleteProductModal) {
+                const form = deleteProductModal.querySelector('form');
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    fetch('delete_product.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            closeModal('deleteProductModal');
+                            // Remove the row from the table
+                            const id = form.querySelector('[name="product_id"]').value;
+                            const row = document.querySelector('tr td button.btn-danger[onclick="deleteProduct(' + id + ')"]');
+                            if (row) {
+                                // Remove the parent row
+                                row.closest('tr').remove();
+                            } else {
+                                // Fallback: reload the page if row not found
+                                location.reload();
+                            }
+                        } else {
+                            alert(data.message || 'Failed to delete product.');
+                        }
+                    })
+                    .catch(() => {
+                        alert('Failed to delete product.');
+                    });
+                });
+            }
+        });
+
         // Close modal when clicking outside
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
@@ -1149,4 +1186,4 @@ $all_raw_materials_result = $conn->query($all_raw_materials_sql);
         });
     </script>
 </body>
-</html> 
+</html>

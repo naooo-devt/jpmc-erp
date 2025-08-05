@@ -14,15 +14,14 @@ require_once 'db_connect.php';
 // Only proceed if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the product ID from the POST request
-    $product_id = intval($_POST['id']);
+    $id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
 
-    if ($product_id > 0) {
+    if ($id > 0) {
         $conn->begin_transaction();
         try {
-            // The database is set up with ON DELETE CASCADE for product_materials,
-            // so related entries in that table will be deleted automatically.
-            $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
-            $stmt->bind_param("i", $product_id);
+            // Delete from product_materials instead of products
+            $stmt = $conn->prepare("DELETE FROM product_materials WHERE product_id = ?");
+            $stmt->bind_param("i", $id);
             $stmt->execute();
 
             // Check if any row was actually deleted
@@ -43,4 +42,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     exit;
 }
+?>
 ?>

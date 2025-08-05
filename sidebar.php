@@ -49,7 +49,7 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
                     <i class="fas fa-industry"></i>
                     <span>Manufacturing</span>
                 </a>
-                <a href="suppliers.php" class="menu-item <?= ($currentPage == 'suppliers.php') ? 'active' : '' ?>">
+                <a href="transactions.php" class="menu-item <?= ($currentPage == 'transactions.php') ? 'active' : '' ?>">
                     <i class="fas fa-exchange-alt"></i>
                     <span>Transactions</span>
                 </a>
