@@ -505,6 +505,9 @@ if (!$selected_employee && count($employees) > 0) {
                     <div class="employee-grid-header">
                         <h2 class="employee-grid-title">Employee Records</h2>
                         <button class="add-employee-btn" id="addEmployeeBtn">Add New Employee</button>
+                        <button class="add-employee-btn" id="employeeRecordsBtn" style="background: var(--success); margin-left: 10px;">
+                            <i class="fas fa-table"></i> Employee Records
+                        </button>
                     </div>
                     <div class="employee-cards" id="employeeCards">
                         <?php foreach ($employees as $employee): ?>
@@ -719,7 +722,7 @@ if (!$selected_employee && count($employees) > 0) {
                 body: formData
             })
             .then(res => res.json())
-            .then(data => {
+            .then data => {
                 if (data.success) {
                     location.reload();
                 } else {
@@ -780,6 +783,11 @@ if (!$selected_employee && count($employees) > 0) {
             } else {
                 document.getElementById('employeeDetailPanel').style.display = 'block';
             }
+        });
+
+        // Employee Records button logic (demo: just alert, you can link to a records page)
+        document.getElementById('employeeRecordsBtn').addEventListener('click', function() {
+            alert('Employee Records button clicked. (Implement navigation or export logic here.)');
         });
     </script>
 </body>
