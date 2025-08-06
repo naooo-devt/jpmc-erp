@@ -1,6 +1,6 @@
 <?php
 $currentPage = basename($_SERVER['PHP_SELF']);
-$supplyChainPages = ['supply_chain.php', 'suppliers.php'];
+$supplyChainPages = ['supply_chain.php', 'transactions.php']; // <-- include transactions.php
 $isSupplyChainPage = in_array($currentPage, $supplyChainPages);
 $isCustomerServicePage = ($currentPage === 'customer_service.php');
 ?>
@@ -37,14 +37,14 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
             </a>
 
             <!-- Dropdown Toggle -->
-            <div class="menu-item menu-dropdown" id="inventoryDropdown">
+            <div class="menu-item menu-dropdown <?= $isSupplyChainPage ? 'open active' : '' ?>" id="inventoryDropdown">
                 <i class="fas fa-link"></i>
                 <span> Inventory </span>
                 <i class="fas fa-chevron-down"></i>
             </div>
 
             <!-- Dropdown Menu -->
-            <div class="dropdown-menu" id="inventoryDropdownMenu">
+            <div class="dropdown-menu <?= $isSupplyChainPage ? 'open' : '' ?>" id="inventoryDropdownMenu">
                 <a href="supply_chain.php" class="menu-item <?= ($currentPage == 'supply_chain.php') ? 'active' : '' ?>">
                     <i class="fas fa-industry"></i>
                     <span>Manufacturing</span>
@@ -95,6 +95,25 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
         pointer-events: none;
     }
 <?php endif; ?>
+
+#inventoryDropdown .fa-chevron-down {
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+#inventoryDropdown.open .fa-chevron-down,
+#inventoryDropdown.active .fa-chevron-down {
+    transform: rotate(180deg);
+}
+#inventoryDropdownMenu {
+    transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    display: block !important; /* Always block for animation */
+}
+#inventoryDropdownMenu.open {
+    max-height: 200px; /* Adjust as needed for content */
+    opacity: 1;
+}
 </style>
 
 <script>
@@ -102,43 +121,49 @@ document.addEventListener('DOMContentLoaded', function () {
     const dropdownToggle = document.getElementById('inventoryDropdown');
     const dropdownMenu = document.getElementById('inventoryDropdownMenu');
 
-    const childPages = ['supply_chain.php', 'suppliers.php'];
-    const currentPage = window.location.pathname.split('/').pop();
+    // PHP will echo true/false for isSupplyChainPage
+    const isSupplyChainPage = <?= $isSupplyChainPage ? 'true' : 'false' ?>;
 
+    // Always use sessionStorage to remember open/close state
     let state = sessionStorage.getItem('supplyChainOpen');
 
     function updateDropdownState(open) {
         if (open) {
             dropdownToggle.classList.add('open', 'active');
             dropdownMenu.classList.add('open');
-            dropdownMenu.style.display = 'block';
         } else {
             dropdownToggle.classList.remove('open', 'active');
             dropdownMenu.classList.remove('open');
-            dropdownMenu.style.display = 'none';
         }
     }
 
-    // If current page is a Supply Chain page
-    if (childPages.includes(currentPage)) {
-        if (state === null) {
-            state = 'true';
-            sessionStorage.setItem('supplyChainOpen', 'true');
-        }
-        updateDropdownState(state === 'true');
+    // On page load, use PHP state if on supply chain page, else use sessionStorage
+    if (isSupplyChainPage) {
+        updateDropdownState(true);
+        sessionStorage.setItem('supplyChainOpen', 'true');
     } else {
-        // On any other page, force it closed
-        sessionStorage.setItem('supplyChainOpen', 'false');
-        updateDropdownState(false);
+        updateDropdownState(state === 'true');
     }
 
     // Handle user toggle
-    dropdownToggle.addEventListener('click', function () {
-        const isOpen = dropdownMenu.classList.toggle('open');
-        dropdownToggle.classList.toggle('open', isOpen);
-        dropdownToggle.classList.toggle('active', isOpen);
-        dropdownMenu.style.display = isOpen ? 'block' : 'none';
+    dropdownToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const isOpen = !dropdownMenu.classList.contains('open');
+        updateDropdownState(isOpen);
         sessionStorage.setItem('supplyChainOpen', isOpen.toString());
+    });
+
+    // Prevent dropdown from closing when clicking inside the dropdown menu or its links
+    dropdownMenu.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // Optional: close dropdown if clicking outside (sidebar or dropdown)
+    document.addEventListener('click', function (e) {
+        if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            updateDropdownState(false);
+            sessionStorage.setItem('supplyChainOpen', 'false');
+        }
     });
 });
 </script>

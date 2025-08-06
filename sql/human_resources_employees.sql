@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `employees` (
   `appointed_as` varchar(100) NOT NULL,
   `birthdate` varchar(30) NOT NULL,
   `civil_status` varchar(20) NOT NULL,
-  `address` varchar(150) NOT NULL,
+  `address` varchar(150) NOT NULL, 
   `image` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
