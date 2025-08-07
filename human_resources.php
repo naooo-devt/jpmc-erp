@@ -655,6 +655,28 @@ if (!$selected_employee && count($employees) > 0) {
     </div>
 
     <script>
+        // Toggle employee detail panel on card click
+        function toggleEmployeeDetail(empId, event) {
+            // Prevent toggle if clicking on menu buttons
+            if (event.target.classList.contains('card-menu-btn') || event.target.closest('.card-menu-dropdown')) return;
+
+            const url = new URL(window.location);
+            const currentId = url.searchParams.get('employee');
+            if (currentId === empId) {
+                // If already open, close it
+                url.searchParams.delete('employee');
+                window.history.pushState({}, '', url);
+                document.getElementById('employeeDetailPanel').style.display = 'none';
+                // Remove highlight from all cards
+                document.querySelectorAll('.employee-card').forEach(card => card.classList.remove('selected'));
+            } else {
+                // Open the panel for this employee
+                url.searchParams.set('employee', empId);
+                window.history.pushState({}, '', url);
+                location.reload(); // Reload to update PHP-rendered details and highlight
+            }
+        }
+
         // Card menu (3-dot) logic
         function toggleCardMenu(btn) {
             document.querySelectorAll('.card-menu-dropdown').forEach(menu => menu.classList.remove('active'));
@@ -722,7 +744,7 @@ if (!$selected_employee && count($employees) > 0) {
                 body: formData
             })
             .then(res => res.json())
-            .then data => {
+            .then(data => {
                 if (data.success) {
                     location.reload();
                 } else {
@@ -751,28 +773,6 @@ if (!$selected_employee && count($employees) > 0) {
             })
             .catch(() => alert('Failed to delete employee.'));
         });
-
-        // Toggle employee detail panel on card click
-        function toggleEmployeeDetail(empId, event) {
-            // Prevent toggle if clicking on menu buttons
-            if (event.target.classList.contains('card-menu-btn') || event.target.closest('.card-menu-dropdown')) return;
-
-            const url = new URL(window.location);
-            const currentId = url.searchParams.get('employee');
-            if (currentId === empId) {
-                // If already open, close it
-                url.searchParams.delete('employee');
-                window.history.pushState({}, '', url);
-                document.getElementById('employeeDetailPanel').style.display = 'none';
-                // Remove highlight from all cards
-                document.querySelectorAll('.employee-card').forEach(card => card.classList.remove('selected'));
-            } else {
-                // Open the panel for this employee
-                url.searchParams.set('employee', empId);
-                window.history.pushState({}, '', url);
-                location.reload(); // Reload to update PHP-rendered details and highlight
-            }
-        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Show/hide detail panel based on URL param (for direct loads)
