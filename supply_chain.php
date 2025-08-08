@@ -14,6 +14,65 @@ require_once 'db_connect.php';
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
 
+// Handle form submissions for calendar notes
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        try {
+            if ($_POST['action'] === 'add_note') {
+                $note_date = $_POST['note_date'];
+                $note_text = $_POST['note_text'];
+                
+                $stmt = $conn->prepare("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES (?, ?, ?)");
+                $stmt->bind_param("sss", $note_date, $note_text, $username);
+                $stmt->execute();
+                
+                // Log the action
+                $log_text = "Added note for date: $note_date";
+                $conn->query("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES ('$note_date', '$log_text (Note: $note_text)', 'System')");
+                
+                $_SESSION['message'] = "Note added successfully!";
+            } 
+            elseif ($_POST['action'] === 'edit_note') {
+                $note_id = $_POST['note_id'];
+                $note_date = $_POST['note_date'];
+                $note_text = $_POST['note_text'];
+                
+                $stmt = $conn->prepare("UPDATE calendar_schedule_note_history SET note_date = ?, note_text = ? WHERE id = ?");
+                $stmt->bind_param("ssi", $note_date, $note_text, $note_id);
+                $stmt->execute();
+                
+                // Log the action
+                $log_text = "Edited note ID: $note_id";
+                $conn->query("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES ('$note_date', '$log_text (New note: $note_text)', 'System')");
+                
+                $_SESSION['message'] = "Note updated successfully!";
+            } 
+            elseif ($_POST['action'] === 'delete_note') {
+                $note_id = $_POST['note_id'];
+                
+                // Get note info before deleting for the log
+                $note = $conn->query("SELECT * FROM calendar_schedule_note_history WHERE id = $note_id")->fetch_assoc();
+                
+                $stmt = $conn->prepare("DELETE FROM calendar_schedule_note_history WHERE id = ?");
+                $stmt->bind_param("i", $note_id);
+                $stmt->execute();
+                
+                // Log the action
+                $log_text = "Deleted note ID: $note_id";
+                $conn->query("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES (NOW(), '$log_text (Original note: {$note['note_text']})', 'System')");
+                
+                $_SESSION['message'] = "Note deleted successfully!";
+            }
+            
+            // Redirect to prevent form resubmission
+            header("Location: supply_chain.php");
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Error: " . $e->getMessage();
+        }
+    }
+}
+
 // Fetch suppliers data
 $suppliers_sql = "
     SELECT s.id, s.name, s.contact_person, s.email, s.phone, s.address, s.status, s.rating, s.created_at,
@@ -58,6 +117,34 @@ $avg_delivery_time = $conn->query("
     FROM deliveries d 
     JOIN purchase_orders po ON d.purchase_order_id = po.id 
     WHERE d.status = 'Delivered'")->fetch_assoc()['avg_days'] ?? 0;
+
+// Fetch calendar notes from the database
+$calendar_notes = [];
+$notes_result = $conn->query("SELECT id, note_date, note_text, user FROM calendar_schedule_note_history WHERE user != 'System' ORDER BY note_date DESC");
+if ($notes_result && $notes_result->num_rows > 0) {
+    while ($note = $notes_result->fetch_assoc()) {
+        $calendar_notes[] = [
+            'id' => $note['id'],
+            'date' => $note['note_date'],
+            'text' => $note['note_text'],
+            'user' => $note['user']
+        ];
+    }
+}
+
+// Fetch audit log entries (system-generated entries)
+$audit_logs = [];
+$logs_result = $conn->query("SELECT id, note_date, note_text, user FROM calendar_schedule_note_history WHERE user = 'System' ORDER BY created_at DESC LIMIT 10");
+if ($logs_result && $logs_result->num_rows > 0) {
+    while ($log = $logs_result->fetch_assoc()) {
+        $audit_logs[] = [
+            'id' => $log['id'],
+            'date' => $log['note_date'],
+            'text' => $log['note_text'],
+            'user' => $log['user']
+        ];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1181,12 +1268,351 @@ $avg_delivery_time = $conn->query("
             border: 1px solid #ccc !important;
         }
     }
+
+        /* Audit Log Styles */
+    .audit-log-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        max-height: 300px;
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+        z-index: 1000;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .audit-log-header {
+        padding: 12px 16px;
+        background: var(--primary-blue);
+        color: var(--white);
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .audit-log-toggle {
+        background: none;
+        border: none;
+        color: var(--white);
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .audit-log-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+        display: none; /* Hidden by default */
+    }
+
+    .audit-log-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.8rem;
+    }
+
+    .audit-log-item:last-child {
+        border-bottom: none;
+    }
+
+    .audit-log-time {
+        color: var(--gray);
+        font-size: 0.7rem;
+        margin-bottom: 4px;
+    }
+
+    .audit-log-text {
+        color: var(--dark-gray);
+    }
+
+    .audit-log-user {
+        color: var(--primary-blue);
+        font-weight: 600;
+    }
+
+    /* When log is expanded */
+    .audit-log-container.expanded .audit-log-content {
+        display: block;
+    }
+
+    .audit-log-container.expanded .audit-log-toggle i {
+        transform: rotate(180deg);
+    }
+
+    /* Calendar Note Styles */
+    .calendar-note {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: var(--shadow-sm);
+        border-left: 4px solid var(--primary-blue);
+    }
+
+    .calendar-note-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .calendar-note-date {
+        font-weight: 600;
+        color: var(--dark-blue);
+    }
+
+    .calendar-note-user {
+        font-size: 0.8rem;
+        color: var(--gray);
+    }
+
+    .calendar-note-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .calendar-note-action {
+        background: none;
+        border: none;
+        color: var(--gray);
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: var(--transition-fast);
+    }
+
+    .calendar-note-action:hover {
+        color: var(--primary-blue);
+    }
+
+    .calendar-note-text {
+        color: var(--dark-gray);
+    }
+
+    /* Calendar Container */
+    .calendar-container {
+        display: flex;
+        gap: 20px;
+    }
+
+    .calendar-notes-list {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+        .calendar-container {
+            flex-direction: column;
+        }
+        
+        .calendar-notes-list {
+            max-width: 100%;
+        }
+    }
+    /* Calendar Container */
+    .calendar-wrapper {
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+        padding: 20px;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    /* FullCalendar Custom Styling */
+    .fc {
+        font-family: inherit;
+    }
+
+    .fc-header-toolbar {
+        margin-bottom: 1em;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark-gray);
+    }
+
+    .fc-button {
+        background: var(--white);
+        border: 1px solid var(--border-color);
+        color: var(--dark-gray);
+        font-weight: 500;
+        text-transform: capitalize;
+        border-radius: 8px !important;
+        padding: 6px 12px;
+    }
+
+    .fc-button:hover {
+        background: var(--light-gray);
+    }
+
+    .fc-button-primary:not(:disabled).fc-button-active {
+        background: var(--primary-blue);
+        color: var(--white);
+        border-color: var(--primary-blue);
+    }
+
+    .fc-col-header-cell {
+        background: var(--light-gray);
+        padding: 8px 0;
+    }
+
+    .fc-col-header-cell-cushion {
+        color: var(--dark-gray);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .fc-daygrid-day {
+        padding: 4px;
+    }
+
+    .fc-daygrid-day-number {
+        color: var(--dark-gray);
+        font-weight: 500;
+        padding: 4px;
+    }
+
+    .fc-day-today {
+        background-color: rgba(37, 99, 235, 0.1) !important;
+    }
+
+    .fc-day-today .fc-daygrid-day-number {
+        color: var(--primary-blue);
+        font-weight: 700;
+        font-size: 1.1em;
+    }
+
+    .fc-daygrid-day.fc-day-today {
+        background-color: rgba(37, 99, 235, 0.05);
+    }
+
+    .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        color: var(--primary-blue);
+        font-weight: 700;
+    }
+
+    .fc-daygrid-day.fc-day-today {
+        position: relative;
+    }
+
+    .fc-daygrid-day.fc-day-today:after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 3px;
+        background: var(--primary-blue);
+        border-radius: 3px;
+    }
+
+    .fc-daygrid-event {
+        font-size: 0.8em;
+        padding: 2px 4px;
+        border-radius: 4px;
+    }
+
+    .fc-daygrid-event-dot {
+        display: none;
+    }
+
+    .fc-event-title {
+        font-weight: 500;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1.1rem;
+        }
+        
+        .fc-button {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+    }
+
+    
     </style>
 </head>
 <body>
     <!-- Sidebar Navigation -->
-        <!--SideBar MENU -->
-    <?php include 'sidebar.php'; ?>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="company-logo">
+                <img src="images/logo.png" alt="Company Logo">
+            </div>
+            <div class="company-name">James Polymer</div>
+            <div class="company-subtitle">Manufacturing Corporation</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-section-title">Main Navigation</div>
+                <a href="index.php" class="menu-item" data-module="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="finances.php" class="menu-item" data-module="finances">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Finances</span>
+                </a>
+                <a href="human_resources.php" class="menu-item" data-module="human-resources">
+                    <i class="fas fa-users"></i>
+                    <span>Human Resources</span>
+                </a>
+                <div class="menu-item menu-dropdown open" id="supplyChainDropdown">
+                    <i class="fas fa-link"></i>
+                    <span>Inventory</span>
+                    <i class="fas fa-chevron-up"></i>
+                </div>
+                <div class="dropdown-menu open" id="supplyChainDropdownMenu">
+                    <a href="supply_chain.php" class="menu-item active" data-module="manufacturing">
+                        <i class="fas fa-industry"></i>
+                        <span>Manufacturing</span>
+                    </a>
+                    <a href="transactions.php" class="menu-item" data-module="transactions">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transactions</span>
+                    </a>
+                </div>
+                <a href="customer_service.php" class="menu-item" data-module="customer-service">
+                    <i class="fas fa-headset"></i>
+                    <span>Customer Service</span>
+                </a>
+                <a href="reports.php" class="menu-item" data-module="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-section-title">System</div>
+                <a href="finished_goods.php" class="menu-item" data-module="system-admin">
+                    <i class="fas fa-cog"></i>
+                    <span>System Administration</span>
+                </a>
+                <a href="logout.php" class="menu-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content Area -->
     <div class="main-content">
@@ -1231,12 +1657,55 @@ $avg_delivery_time = $conn->query("
             <div class="tab-content">
                 <!-- Schedule Tab -->
                 <div class="tab-pane active" id="schedule">
-                    <h2>Production Calendar</h2>
-                    <div style="max-width:900px;margin:0 auto;">
-                        <!-- Literal Calendar -->
-                        <div id="calendar" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:20px; margin-bottom:32px;"></div>
+                    <div class="calendar-container">
+                        <div style="flex: 2; max-width:900px;">
+                            <h2>Production Calendar</h2>
+                            <?php if (isset($_SESSION['message'])): ?>
+                                <div class="alert alert-success" style="background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                                    <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (isset($_SESSION['error'])): ?>
+                                <div class="alert alert-danger" style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                                    <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <!-- Literal Calendar -->
+                            <div id="calendar" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:20px; margin-bottom:32px;"></div>
+                            
+                            <button class="btn btn-primary" onclick="openAddNoteModal()">
+                                <i class="fas fa-plus"></i> Add New Note
+                            </button>
+                        </div>
                     </div>
-                    <p style="margin-top:1rem;">Schedule management content will go here.</p>
+
+                    <div class="calendar-notes-list">
+                            <h2>Recent Notes</h2>
+                            <?php if (empty($calendar_notes)): ?>
+                                <p>No notes found. Add a note to get started.</p>
+                            <?php else: ?>
+                                <?php foreach ($calendar_notes as $note): ?>
+                                    <div class="calendar-note">
+                                        <div class="calendar-note-header">
+                                            <div>
+                                                <span class="calendar-note-date"><?php echo date('M d, Y', strtotime($note['date'])); ?></span>
+                                                <span class="calendar-note-user">by <?php echo $note['user']; ?></span>
+                                            </div>
+                                            <div class="calendar-note-actions">
+                                                <button class="calendar-note-action" onclick="openEditNoteModal(<?php echo $note['id']; ?>, '<?php echo $note['date']; ?>', '<?php echo addslashes($note['text']); ?>')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="calendar-note-action" onclick="confirmDeleteNote(<?php echo $note['id']; ?>)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-note-text"><?php echo htmlspecialchars($note['text']); ?></div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                 </div>
 
                 <!-- Raw Materials Tab -->
@@ -1504,8 +1973,35 @@ $avg_delivery_time = $conn->query("
                     </div>
                 </div>
             </div>
-            
-       
+        </div>
+    </div>
+
+        <!-- Audit Log Container -->
+    <div class="audit-log-container" id="auditLogContainer">
+    <div class="audit-log-header" id="auditLogHeader">
+        <span>Audit Log</span>
+        <button class="audit-log-toggle" id="auditLogToggle">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+    <div class="audit-log-content" id="auditLogContent" style="display:none;">
+        <?php if (empty($audit_logs)): ?>
+            <div class="audit-log-item">No audit log entries found</div>
+        <?php else: ?>
+            <?php foreach ($audit_logs as $log): ?>
+                <div class="audit-log-item">
+                    <div class="audit-log-time">
+                        <?php echo date('M d, Y H:i', strtotime($log['date'])); ?>
+                    </div>
+                    <div class="audit-log-text">
+                        <?php echo htmlspecialchars($log['text']); ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
 
     <!-- Add Raw Material Modal -->
     <div id="addMaterialModal" class="modal-overlay" style="display:none;">
@@ -1671,6 +2167,100 @@ $avg_delivery_time = $conn->query("
         </div>
     </div>
 
+    <!-- Add Note Modal -->
+    <div id="addNoteModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeAddNoteModal()">&times;</span>
+            <form id="addNoteForm" method="POST">
+                <input type="hidden" name="action" value="add_note">
+                <div class="form-header">
+                    <h2 class="form-title"><i class="fas fa-plus-circle"></i> Add Schedule Note</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar-day"></i> Date</label>
+                        <input type="date" class="form-input" name="note_date" id="noteDate" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-sticky-note"></i> Note/Task</label>
+                        <textarea class="form-input" name="note_text" id="noteText" rows="3" required placeholder="Enter your note or task details"></textarea>
+                    </div>
+                </div>
+                <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-primary simple-btn" type="submit">
+                        <i class="fas fa-save"></i> Save Note
+                    </button>
+                    <button class="btn btn-outline simple-btn" type="button" onclick="closeAddNoteModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Note Modal -->
+    <div id="editNoteModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeEditNoteModal()">&times;</span>
+            <form id="editNoteForm" method="POST">
+                <input type="hidden" name="action" value="edit_note">
+                <input type="hidden" name="note_id" id="editNoteId">
+                <div class="form-header">
+                    <h2 class="form-title"><i class="fas fa-edit"></i> Edit Schedule Note</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar-day"></i> Date</label>
+                        <input type="date" class="form-input" name="note_date" id="editNoteDate" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-sticky-note"></i> Note/Task</label>
+                        <textarea class="form-input" name="note_text" id="editNoteText" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-primary simple-btn" type="submit">
+                        <i class="fas fa-save"></i> Update Note
+                    </button>
+                    <button class="btn btn-outline simple-btn" type="button" onclick="closeEditNoteModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Note Confirmation Modal -->
+    <div id="deleteNoteModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeDeleteNoteModal()">&times;</span>
+            <form id="deleteNoteForm" method="POST">
+                <input type="hidden" name="action" value="delete_note">
+                <input type="hidden" name="note_id" id="deleteNoteId">
+                <div class="form-header">
+                    <h2 class="form-title"><i class="fas fa-trash-alt"></i> Confirm Deletion</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <p>Are you sure you want to delete this note? This action cannot be undone.</p>
+                    </div>
+                </div>
+                <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-danger simple-btn" type="submit">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    <button class="btn btn-outline simple-btn" type="button" onclick="closeDeleteNoteModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Add FullCalendar CSS/JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
@@ -1798,27 +2388,23 @@ $avg_delivery_time = $conn->query("
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                events: [
-                    // Example events, replace with your dynamic data if needed
-                    {
-                        title: 'Production Run A',
-                        start: new Date().toISOString().slice(0,10)
-                    },
-                    {
-                        title: 'Maintenance',
-                        start: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString().slice(0,10),
-                        color: '#f59e0b'
-                    }
-                ]
+                dateClick: function(info) {
+                    // Set the date in the add note modal when a date is clicked
+                    document.getElementById('noteDate').value = info.dateStr;
+                    openAddNoteModal();
+                }
             });
             calendar.render();
         }
     });
 
-    // Modal functions (to be implemented)
+    // Modal functions
     function openModal(modalId) {
-        // Implementation for opening modals
-        console.log('Opening modal:', modalId);
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
     }
 
     function editSupplier(id) {
@@ -1857,7 +2443,6 @@ $avg_delivery_time = $conn->query("
     }
 
     function openViewRawMaterialModal(id) {
-       
         // Fetch material data and populate modal
         console.log('View raw material:', id);
         document.getElementById('viewRawMaterialModal').style.display = 'flex';
@@ -1881,6 +2466,40 @@ $avg_delivery_time = $conn->query("
         if (confirm('Are you sure you want to delete this raw material?')) {
             window.location.href = 'delete_material.php?id=' + id;
         }
+    }
+
+    // Note Modal Functions
+    function openAddNoteModal() {
+        // Set today's date as default if not already set
+        if (!document.getElementById('noteDate').value) {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('noteDate').value = today;
+        }
+        document.getElementById('addNoteModal').style.display = 'flex';
+    }
+
+    function closeAddNoteModal() {
+        document.getElementById('addNoteModal').style.display = 'none';
+    }
+
+    function openEditNoteModal(id, date, text) {
+        document.getElementById('editNoteId').value = id;
+        document.getElementById('editNoteDate').value = date;
+        document.getElementById('editNoteText').value = text;
+        document.getElementById('editNoteModal').style.display = 'flex';
+    }
+
+    function closeEditNoteModal() {
+        document.getElementById('editNoteModal').style.display = 'none';
+    }
+
+    function confirmDeleteNote(id) {
+        document.getElementById('deleteNoteId').value = id;
+        document.getElementById('deleteNoteModal').style.display = 'flex';
+    }
+
+    function closeDeleteNoteModal() {
+        document.getElementById('deleteNoteModal').style.display = 'none';
     }
 
     // Initialize raw materials functionality
@@ -1950,6 +2569,59 @@ $avg_delivery_time = $conn->query("
             });
         }
     });
+     // Audit Log Toggle 
+document.addEventListener('DOMContentLoaded', function() {
+    const auditLogContainer = document.getElementById('auditLogContainer');
+    const auditLogHeader = document.getElementById('auditLogHeader');
+    const auditLogContent = document.getElementById('auditLogContent');
+    const auditLogToggle = document.getElementById('auditLogToggle');
+
+    if (auditLogHeader && auditLogToggle) {
+        // Initialize state from localStorage or default to closed
+        let auditLogExpanded = localStorage.getItem('auditLogExpanded') === 'true';
+        
+        // Set initial state
+        if (auditLogExpanded) {
+            auditLogContainer.classList.add('expanded');
+            auditLogContent.style.display = 'block';
+        } else {
+            auditLogContainer.classList.remove('expanded');
+            auditLogContent.style.display = 'none';
+        }
+
+        // Toggle function
+        function toggleAuditLog() {
+            auditLogExpanded = !auditLogExpanded;
+            auditLogContainer.classList.toggle('expanded', auditLogExpanded);
+            auditLogContent.style.display = auditLogExpanded ? 'block' : 'none';
+            localStorage.setItem('auditLogExpanded', auditLogExpanded);
+        }
+
+        // Set up event listeners
+        auditLogHeader.addEventListener('click', function(e) {
+            // Only toggle if the click wasn't on the toggle button itself
+            if (!auditLogToggle.contains(e.target)) {
+                toggleAuditLog();
+            }
+        });
+
+        auditLogToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleAuditLog();
+        });
+
+        // Close log when clicking outside
+        document.addEventListener('click', function(e) {
+            if (auditLogExpanded && !auditLogContainer.contains(e.target)) {
+                auditLogExpanded = false;
+                auditLogContainer.classList.remove('expanded');
+                auditLogContent.style.display = 'none';
+                localStorage.setItem('auditLogExpanded', false);
+            }
+        });
+    }
+});
+
     </script>
 </body>
 </html>
