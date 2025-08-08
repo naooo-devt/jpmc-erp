@@ -505,9 +505,6 @@ if (!$selected_employee && count($employees) > 0) {
                     <div class="employee-grid-header">
                         <h2 class="employee-grid-title">Employee Records</h2>
                         <button class="add-employee-btn" id="addEmployeeBtn">Add New Employee</button>
-                        <button class="add-employee-btn" id="employeeRecordsBtn" style="background: var(--success); margin-left: 10px;">
-                            <i class="fas fa-table"></i> Employee Records
-                        </button>
                     </div>
                     <div class="employee-cards" id="employeeCards">
                         <?php foreach ($employees as $employee): ?>
@@ -655,28 +652,6 @@ if (!$selected_employee && count($employees) > 0) {
     </div>
 
     <script>
-        // Toggle employee detail panel on card click
-        function toggleEmployeeDetail(empId, event) {
-            // Prevent toggle if clicking on menu buttons
-            if (event.target.classList.contains('card-menu-btn') || event.target.closest('.card-menu-dropdown')) return;
-
-            const url = new URL(window.location);
-            const currentId = url.searchParams.get('employee');
-            if (currentId === empId) {
-                // If already open, close it
-                url.searchParams.delete('employee');
-                window.history.pushState({}, '', url);
-                document.getElementById('employeeDetailPanel').style.display = 'none';
-                // Remove highlight from all cards
-                document.querySelectorAll('.employee-card').forEach(card => card.classList.remove('selected'));
-            } else {
-                // Open the panel for this employee
-                url.searchParams.set('employee', empId);
-                window.history.pushState({}, '', url);
-                location.reload(); // Reload to update PHP-rendered details and highlight
-            }
-        }
-
         // Card menu (3-dot) logic
         function toggleCardMenu(btn) {
             document.querySelectorAll('.card-menu-dropdown').forEach(menu => menu.classList.remove('active'));
@@ -774,6 +749,28 @@ if (!$selected_employee && count($employees) > 0) {
             .catch(() => alert('Failed to delete employee.'));
         });
 
+        // Toggle employee detail panel on card click
+        function toggleEmployeeDetail(empId, event) {
+            // Prevent toggle if clicking on menu buttons
+            if (event.target.classList.contains('card-menu-btn') || event.target.closest('.card-menu-dropdown')) return;
+
+            const url = new URL(window.location);
+            const currentId = url.searchParams.get('employee');
+            if (currentId === empId) {
+                // If already open, close it
+                url.searchParams.delete('employee');
+                window.history.pushState({}, '', url);
+                document.getElementById('employeeDetailPanel').style.display = 'none';
+                // Remove highlight from all cards
+                document.querySelectorAll('.employee-card').forEach(card => card.classList.remove('selected'));
+            } else {
+                // Open the panel for this employee
+                url.searchParams.set('employee', empId);
+                window.history.pushState({}, '', url);
+                location.reload(); // Reload to update PHP-rendered details and highlight
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Show/hide detail panel based on URL param (for direct loads)
             const url = new URL(window.location);
@@ -783,11 +780,6 @@ if (!$selected_employee && count($employees) > 0) {
             } else {
                 document.getElementById('employeeDetailPanel').style.display = 'block';
             }
-        });
-
-        // Employee Records button logic (demo: just alert, you can link to a records page)
-        document.getElementById('employeeRecordsBtn').addEventListener('click', function() {
-            alert('Employee Records button clicked. (Implement navigation or export logic here.)');
         });
     </script>
 </body>

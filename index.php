@@ -103,6 +103,7 @@ $net_profit = $total_revenue - $total_expenses;
         <div class="content">
             <!-- Dashboard Module -->
             <div class="module-content active" id="dashboard">
+                <!-- Dashboard Summary -->
                 <div class="dashboard-grid">
                     <div class="stat-card">
                         <div class="stat-header">

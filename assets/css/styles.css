@@ -315,9 +315,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    /* Hide scrollbar */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    scrollbar-width: none;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -594,7 +592,6 @@ body {
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
-
 .stat-card {
     background: var(--white);
     border-radius: 12px;
@@ -684,13 +681,27 @@ body {
     margin-bottom: 2rem;
 }
 
+/* Dashboard Charts*/
 .chart-container {
     background: var(--white);
     border-radius: 12px;
-    box-shadow: var(--shadow);
     padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
     border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
 }
+
+.chart-container::before { 
+    content: ''; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    height: 4px; 
+    background: linear-gradient(90deg, var(--primary-red), var(--primary-blue));
+} 
 
 .chart-header {
     display: flex;

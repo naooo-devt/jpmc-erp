@@ -13,7 +13,7 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
                      style="width: 60px; height: 60px; border-radius: 12px; object-fit: contain; display: block;">
             </a>
         </div>
-        <div class="company-name">James Polymer</div>
+        <div class="company-name">James Polymers</div>
         <div class="company-subtitle">Manufacturing Corporation</div>
     </div>
 

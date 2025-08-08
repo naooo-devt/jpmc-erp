@@ -15,8 +15,10 @@ $create_expenses_table = "CREATE TABLE IF NOT EXISTS expenses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date DATE NOT NULL,
     category VARCHAR(100) NOT NULL,
+    department VARCHAR(100) DEFAULT NULL,
     description TEXT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
+    budget DECIMAL(10,2) DEFAULT NULL,
     status ENUM('Paid', 'Pending') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -284,109 +286,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Generate sample data if tables are empty
-$tables_to_check = [
-    'expenses' => [
-        'categories' => ['Raw Materials', 'Logistics', 'Utilities', 'Equipment', 'Maintenance', 'Marketing', 'Office Supplies', 'Insurance', 'Training', 'Software'],
-        'descriptions' => [
-            'Polymer pellets purchase', 'Shipping and freight costs', 'Electricity and power bills', 'New molding machine', 'Machine maintenance and repair',
-            'Digital marketing campaign', 'Office supplies and stationery', 'Business insurance premium', 'Employee training program', 'Software license renewal',
-            'Raw material delivery', 'Transportation costs', 'Water and gas utilities', 'Production equipment', 'Preventive maintenance',
-            'Online advertising', 'Printing and paper supplies', 'Property insurance', 'Safety training course', 'CAD software license',
-            'Plastic resin order', 'Warehouse storage fees', 'Internet and phone bills', 'Quality control equipment', 'Emergency repairs',
-            'Trade show participation', 'Office furniture', 'Workers compensation', 'Technical certification', 'ERP system upgrade'
-        ],
-        'statuses' => ['Paid', 'Pending']
-    ],
-    'income' => [
-        'sources' => ['Product Sales', 'Service Revenue', 'Consultation', 'Licensing', 'Maintenance Contracts'],
-        'descriptions' => [
-            'Plastic containers batch', 'Custom molding service', 'Automotive parts', 'Consultation fees', 'Electronics casings',
-            'Medical device components', 'Aerospace parts', 'Consumer goods', 'Industrial equipment', 'Packaging solutions',
-            'Prototype development', 'Quality testing services', 'Technical support', 'Training workshops', 'Design consultation',
-            'Bulk order delivery', 'Premium products', 'Export sales', 'Local market sales', 'Online sales'
-        ],
-        'statuses' => ['Received', 'Pending']
-    ],
-    'invoices' => [
-        'clients' => ['ABC Manufacturing', 'XYZ Industries', 'Tech Solutions', 'Global Corp', 'Local Business', 'Premium Industries', 'Quality Products Ltd', 'Innovation Corp'],
-        'statuses' => ['Paid', 'Pending', 'Overdue', 'Draft']
-    ],
-    'budget' => [
-        'categories' => ['Raw Materials', 'Equipment', 'Utilities', 'Logistics', 'Maintenance', 'Marketing', 'Office Supplies', 'Insurance', 'Training', 'Software']
-    ]
-];
-
-foreach ($tables_to_check as $table => $data) {
-    $check_empty = "SELECT COUNT(*) as count FROM $table";
-    $empty_result = $conn->query($check_empty);
-    $count = 0;
-    if ($empty_result) {
-        $count = $empty_result->fetch_assoc()['count'];
-    }
-
-    if ($count == 0) {
-        switch ($table) {
-            case 'expenses':
-                for ($i = 0; $i < 25; $i++) {
-                    $date = date('Y-m-d', strtotime('-' . rand(0, 365) . ' days'));
-                    $category = $data['categories'][array_rand($data['categories'])];
-                    $description = $data['descriptions'][array_rand($data['descriptions'])];
-                    $amount = round(rand(100, 50000) / 100, 2);
-                    $status = $data['statuses'][array_rand($data['statuses'])];
-                    
-                    $stmt = $conn->prepare("INSERT INTO expenses (date, category, description, amount, status) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->bind_param("ssdss", $date, $category, $description, $amount, $status);
-                    $stmt->execute();
-                    $stmt->close();
-                }
-                break;
-                
-            case 'income':
-                for ($i = 0; $i < 20; $i++) {
-                    $date = date('Y-m-d', strtotime('-' . rand(0, 365) . ' days'));
-                    $source = $data['sources'][array_rand($data['sources'])];
-                    $description = $data['descriptions'][array_rand($data['descriptions'])];
-                    $amount = round(rand(1000, 50000) / 100, 2);
-                    $status = $data['statuses'][array_rand($data['statuses'])];
-                    
-                    $stmt = $conn->prepare("INSERT INTO income (date, source, description, amount, status) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->bind_param("ssdss", $date, $source, $description, $amount, $status);
-                    $stmt->execute();
-                    $stmt->close();
-                }
-                break;
-                
-            case 'invoices':
-                for ($i = 0; $i < 15; $i++) {
-                    $invoice_no = 'INV-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
-                    $client = $data['clients'][array_rand($data['clients'])];
-                    $amount = round(rand(1000, 50000) / 100, 2);
-                    $due_date = date('Y-m-d', strtotime('+' . rand(1, 90) . ' days'));
-                    $status = $data['statuses'][array_rand($data['statuses'])];
-                    
-                    $stmt = $conn->prepare("INSERT INTO invoices (invoice_no, client, amount, due_date, status) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->bind_param("ssdss", $invoice_no, $client, $amount, $due_date, $status);
-                    $stmt->execute();
-                    $stmt->close();
-                }
-                break;
-                
-            case 'budget':
-                foreach ($data['categories'] as $category) {
-                    $allocated = round(rand(10000, 100000) / 100, 2);
-                    $spent = round(rand(0, $allocated * 0.8) / 100, 2);
-                    
-                    $stmt = $conn->prepare("INSERT INTO budget (category, allocated, spent) VALUES (?, ?, ?)");
-                    $stmt->bind_param("sdd", $category, $allocated, $spent);
-                    $stmt->execute();
-                    $stmt->close();
-                }
-                break;
-        }
-    }
-}
-
 // Fetch data from database
 $expenses_query = "SELECT * FROM expenses ORDER BY date DESC";
 $expenses_result = $conn->query($expenses_query);
@@ -397,6 +296,7 @@ if (!$expenses_result) {
 } else {
     error_log("Expenses query successful, rows: " . $expenses_result->num_rows);
 }
+
 
 $income_query = "SELECT * FROM income ORDER BY date DESC";
 $income_result = $conn->query($income_query);
@@ -521,514 +421,22 @@ $total_income = array_sum(array_column($income, 'amount'));
 $total_invoices = array_sum(array_column($invoices, 'amount'));
 $total_budget_allocated = array_sum(array_column($budget, 'allocated'));
 $total_budget_spent = array_sum(array_column($budget, 'spent'));
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finances - James Polymer ERP</title>
+    <title>Finances - James Polymers ERP</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/finances.css">
     <link rel="icon" href="images/logo.png">
-    <style>
-    /* Scrollbar management for finances page */
-    .tab-content {
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--gray) var(--light-gray);
-    }
-
-    .tab-content::-webkit-scrollbar {
-        display: block;
-        width: 8px;
-    }
-
-    .tab-content::-webkit-scrollbar-track {
-        background: var(--light-gray);
-        border-radius: 4px;
-    }
-
-    .tab-content::-webkit-scrollbar-thumb {
-        background: var(--gray);
-        border-radius: 4px;
-        transition: background 0.3s ease;
-    }
-
-    .tab-content::-webkit-scrollbar-thumb:hover {
-        background: var(--dark-gray);
-    }
-
-    .summary-cards {
-        overflow-x: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--gray) var(--light-gray);
-    }
-
-    .summary-cards::-webkit-scrollbar {
-        display: block;
-        height: 8px;
-    }
-
-    .summary-cards::-webkit-scrollbar-track {
-        background: var(--light-gray);
-        border-radius: 4px;
-    }
-
-    .summary-cards::-webkit-scrollbar-thumb {
-        background: var(--gray);
-        border-radius: 4px;
-        transition: background 0.3s ease;
-    }
-
-    .summary-cards::-webkit-scrollbar-thumb:hover {
-        background: var(--dark-gray);
-    }
-
-    /* Finance Tabs Styles */
-    .finance-tabs {
-        display: flex;
-        background: var(--white);
-        border-radius: 12px;
-        padding: 8px;
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--border-color);
-    }
-
-    .finance-tab {
-        flex: 1;
-        padding: 12px 24px;
-        border: none;
-        background: transparent;
-        color: var(--gray);
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        border-radius: 8px;
-        transition: var(--transition);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .finance-tab:hover {
-        background: var(--light-gray);
-        color: var(--dark-gray);
-    }
-
-    .finance-tab.active {
-        background: var(--primary-blue);
-        color: var(--white);
-    }
-
-    .finance-tab i {
-        font-size: 1rem;
-    }
-
-    /* Tab Content */
-    .tab-content {
-        display: none;
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    /* Summary Cards */
-    .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .summary-card {
-        background: var(--white);
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border-color);
-        transition: var(--transition);
-    }
-
-    .summary-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .summary-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .summary-card-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--gray);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .summary-card-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        color: var(--white);
-    }
-
-    .summary-card-icon.expenses { background: linear-gradient(135deg, var(--error), #b91c1c); }
-    .summary-card-icon.income { background: linear-gradient(135deg, var(--success), #059669); }
-    .summary-card-icon.invoices { background: linear-gradient(135deg, var(--primary-blue), var(--light-blue)); }
-    .summary-card-icon.budget { background: linear-gradient(135deg, var(--warning), #d97706); }
-
-    .summary-card-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--dark-gray);
-        margin-bottom: 0.5rem;
-    }
-
-    .summary-card-change {
-        font-size: 0.875rem;
-        color: var(--gray);
-    }
-
-    .summary-card-change.positive { color: var(--success); }
-    .summary-card-change.negative { color: var(--error); }
-
-    /* Table Styles */
-    .finance-table {
-        background: var(--white);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border-color);
-        max-height: 500px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--gray) var(--light-gray);
-    }
-
-    .finance-table::-webkit-scrollbar {
-        display: block;
-        width: 8px;
-    }
-
-    .finance-table::-webkit-scrollbar-track {
-        background: var(--light-gray);
-        border-radius: 4px;
-    }
-
-    .finance-table::-webkit-scrollbar-thumb {
-        background: var(--gray);
-        border-radius: 4px;
-        transition: background 0.3s ease;
-    }
-
-    .finance-table::-webkit-scrollbar-thumb:hover {
-        background: var(--dark-gray);
-    }
-
-    /* Filter Styles */
-    .filter-group {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        margin-right: 16px;
-    }
-
-    .filter-select {
-        min-width: 140px;
-        padding: 8px 12px;
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        font-size: 0.875rem;
-        background: var(--white);
-        color: var(--dark-gray);
-        transition: all 0.3s ease;
-    }
-
-    .filter-select:focus {
-        outline: none;
-        border-color: var(--primary-blue);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    .filter-select option {
-        padding: 8px;
-        background: var(--white);
-        color: var(--dark-gray);
-    }
-
-    /* Responsive filter group */
-    @media (max-width: 768px) {
-        .filter-group {
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        
-        .filter-select {
-            min-width: 120px;
-        }
-    }
-
-    /* Modal Styles */
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .modal-header h3 {
-        margin: 0;
-        color: var(--dark-blue);
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-
-    .modal-body {
-        margin-bottom: 1.5rem;
-    }
-
-    .modal-body p {
-        margin: 0.5rem 0;
-        color: var(--dark-gray);
-    }
-
-    .modal-body strong {
-        color: var(--dark-blue);
-    }
-
-    .finance-table-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .finance-table-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--dark-gray);
-    }
-
-    .finance-table-actions {
-        display: flex;
-        gap: 0.75rem;
-    }
-
-    .finance-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .finance-table th {
-        background: var(--light-gray);
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--dark-gray);
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .finance-table td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--border-color);
-        color: var(--dark-gray);
-    }
-
-    .finance-table tr:hover {
-        background: var(--light-gray);
-    }
-
-    /* Status Badges */
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 16px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .status-badge.paid, .status-badge.received {
-        background: rgba(16, 185, 129, 0.1);
-        color: var(--success);
-    }
-
-    .status-badge.pending {
-        background: rgba(245, 158, 11, 0.1);
-        color: var(--warning);
-    }
-
-    .status-badge.overdue {
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--error);
-    }
-
-    .status-badge.draft {
-        background: rgba(107, 114, 128, 0.1);
-        color: var(--gray);
-    }
-
-    /* Budget Progress Bars */
-    .budget-progress {
-        width: 100%;
-        height: 8px;
-        background: var(--light-gray);
-        border-radius: 4px;
-        overflow: hidden;
-        margin-top: 0.5rem;
-    }
-
-    .budget-progress-bar {
-        height: 100%;
-        border-radius: 4px;
-        transition: width 0.3s ease;
-    }
-
-    .budget-progress-bar.safe { background: var(--success); }
-    .budget-progress-bar.warning { background: var(--warning); }
-    .budget-progress-bar.danger { background: var(--error); }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .finance-tabs {
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .finance-tab {
-            padding: 10px 16px;
-            font-size: 0.8rem;
-        }
-
-        .summary-cards {
-            grid-template-columns: 1fr;
-        }
-
-        .finance-table-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: stretch;
-        }
-
-        .finance-table-actions {
-            justify-content: center;
-        }
-    }
-
-    /* Ensure buttons are clickable */
-    .edit-expense-btn,
-    .delete-expense-btn {
-        cursor: pointer;
-        pointer-events: auto;
-        z-index: 10;
-        position: relative;
-    }
-
-    .edit-expense-btn:hover,
-    .delete-expense-btn:hover {
-        opacity: 0.8;
-        transform: scale(1.05);
-    }
-
-    .edit-expense-btn:active,
-    .delete-expense-btn:active {
-        transform: scale(0.95);
-    }
-
-    /* Modal detail styles */
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-row strong {
-        color: var(--dark-blue);
-        font-weight: 600;
-    }
-
-    .detail-row span {
-        color: var(--dark-gray);
-        font-weight: 500;
-    }
-
-    .invoice-details,
-    .budget-chart-details {
-        margin-bottom: 1.5rem;
-    }
-
-    .budget-chart-container {
-        text-align: center;
-        margin-top: 1rem;
-        padding: 1rem;
-        background: var(--light-gray);
-        border-radius: 8px;
-    }
-
-    /* Button styles for all CRUD operations */
-    .edit-income-btn,
-    .delete-income-btn,
-    .edit-invoice-btn,
-    .delete-invoice-btn,
-    .view-invoice-btn,
-    .edit-budget-btn,
-    .view-budget-chart-btn {
-        cursor: pointer;
-        pointer-events: auto;
-        z-index: 10;
-        position: relative;
-    }
-
-    .edit-income-btn:hover,
-    .delete-income-btn:hover,
-    .edit-invoice-btn:hover,
-    .delete-invoice-btn:hover,
-    .view-invoice-btn:hover,
-    .edit-budget-btn:hover,
-    .view-budget-chart-btn:hover {
-        opacity: 0.8;
-        transform: scale(1.05);
-    }
-
-    .edit-income-btn:active,
-    .delete-income-btn:active,
-    .edit-invoice-btn:active,
-    .delete-invoice-btn:active,
-    .view-invoice-btn:active,
-    .edit-budget-btn:active,
-    .view-budget-chart-btn:active {
-        transform: scale(0.95);
-    }
-    </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
-        <!--SideBar MENU -->
     <?php include 'sidebar.php'; ?>
-
     <!-- Main Content Area -->
     <div class="main-content">
         <div class="header">
@@ -1045,10 +453,14 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 </div>
             </div>
         </div>
+        <!-- Finance Tabs -->        
         <div class="content">
-            <!-- Finance Tabs -->
             <div class="finance-tabs">
-                <button class="finance-tab active" data-tab="expenses">
+                <button class="finance-tab active" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="finance-tab" data-tab="expenses">
                     <i class="fas fa-receipt"></i>
                     <span>Expenses</span>
                 </button>
@@ -1066,8 +478,70 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 </button>
             </div>
 
+            <!-- Finances - Dashboard Tab -->
+            <div class="fin-tabs-content active" id="dashboard">
+                <!-- Finances -  Dashboard Summary | Cards | Charts | Tables -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-card-title">Total Expenses</div>
+                            <div class="summary-card-icon dashboard">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                        </div>
+                        <div class="summary-card-value">₱<?php echo number_format($total_expenses, 2); ?></div>
+                        <div class="summary-card-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>0% from last month</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-card-title">Total Revenue</div>
+                            <div class="summary-card-icon dashboard">
+                                <i class="fas fa-comment-dollar"></i>
+                            </div>
+                        </div>
+                        <div class="summary-card-value">₱<?php echo number_format($total_income, 2); ?></div>
+                        <div class="summary-card-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>0% from last month</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-card-title">Total Net Profit</div>
+                            <div class="summary-card-icon dashboard">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <div class="summary-card-value">₱<?php echo number_format($total_income - $total_expenses, 2); ?></div>
+                        <div class="summary-card-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>0% from last month</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-section">
+                    <div class="exp-inc-chart">
+                        <div class="exp-inc-chart-header">
+                            <div class="exp-inc-chart-title">Monthly Income vs Expenses</div>
+                            <div class="exp-inc-chart-controls">
+                                <button class="chart-btn active">Weekly</button>
+                                <button class="chart-btn">Monthly</button>
+                                <button class="chart-btn">Quarterly</button>
+                            </div>
+                        </div>
+                        <div class="chart-placeholder">
+                            <canvas id="exinChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Expenses Tab -->
-            <div class="tab-content active" id="expenses">
+            <div class="fin-tabs-content" id="expenses">
                 <div class="summary-cards">
                     <div class="summary-card">
                         <div class="summary-card-header">
@@ -1112,16 +586,13 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                 <input type="text" class="form-input filter-select" id="expenseSearchFilter" placeholder="Search expenses...">
                                 <select class="form-input filter-select" id="expenseCategoryFilter">
                                     <option value="">All Categories</option>
-                                    <option value="Raw Materials">Raw Materials</option>
-                                    <option value="Logistics">Logistics</option>
-                                    <option value="Utilities">Utilities</option>
-                                    <option value="Equipment">Equipment</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Office Supplies">Office Supplies</option>
-                                    <option value="Insurance">Insurance</option>
-                                    <option value="Training">Training</option>
-                                    <option value="Software">Software</option>
+                                    <option value="Production Costs">Production Costs</option>
+                                    <option value="Packaging & Logistics">Packaging & Logistics</option>
+                                    <option value="Operating & Administrative">Operating & Administrative</option>
+                                    <option value="Sales & Marketing">Sales & Marketing</option>
+                                    <option value="Financial Expenses">Financial Expenses</option>
+                                    <option value="R&D / Quality Control">R&D / Quality Control</option>
+                                    <option value="Other Expenses">Other Expenses</option>
                                 </select>
                                 <select class="form-input filter-select" id="expenseStatusFilter">
                                     <option value="">All Status</option>
@@ -1135,7 +606,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                             </div>
                             <button class="btn btn-primary" id="addExpenseBtn">
                                 <i class="fas fa-plus"></i>
-                                <span>Add Expense</span>
+                                <span>Add New Expense</span>
                             </button>
                         </div>
                     </div>
@@ -1185,7 +656,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             </div>
 
             <!-- Income Tab -->
-            <div class="tab-content" id="income">
+            <div class="fin-tabs-content" id="income">
                 <div class="summary-cards">
                     <div class="summary-card">
                         <div class="summary-card-header">
@@ -1499,126 +970,126 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             </div>
 
             <!-- Invoice Tab -->
-            <div class="tab-content" id="invoice">
-                <div class="summary-cards">
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Total Invoices</div>
-                            <div class="summary-card-icon invoices">
-                                <i class="fas fa-file-invoice"></i>
+            <div class="fin-tabs-content" id="invoice">
+                            <div class="summary-cards">
+                                <div class="summary-card">
+                                    <div class="summary-card-header">
+                                        <div class="summary-card-title">Total Invoices</div>
+                                        <div class="summary-card-icon invoices">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </div>
+                                    </div>
+                                    <div class="summary-card-value">₱<?php echo number_format($total_invoices, 2); ?></div>
+                                    <div class="summary-card-change">5 invoices generated</div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="summary-card-header">
+                                        <div class="summary-card-title">Paid Invoices</div>
+                                        <div class="summary-card-icon invoices">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                    </div>
+                                    <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($invoice) { return $invoice['status'] === 'Paid' ? $invoice['amount'] : 0; }, $invoices)), 2); ?></div>
+                                    <div class="summary-card-change positive">1 invoice paid</div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="summary-card-header">
+                                        <div class="summary-card-title">Overdue Amount</div>
+                                        <div class="summary-card-icon invoices">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                    </div>
+                                    <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($invoice) { return $invoice['status'] === 'Overdue' ? $invoice['amount'] : 0; }, $invoices)), 2); ?></div>
+                                    <div class="summary-card-change negative">1 invoice overdue</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_invoices, 2); ?></div>
-                        <div class="summary-card-change">5 invoices generated</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Paid Invoices</div>
-                            <div class="summary-card-icon invoices">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($invoice) { return $invoice['status'] === 'Paid' ? $invoice['amount'] : 0; }, $invoices)), 2); ?></div>
-                        <div class="summary-card-change positive">1 invoice paid</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Overdue Amount</div>
-                            <div class="summary-card-icon invoices">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($invoice) { return $invoice['status'] === 'Overdue' ? $invoice['amount'] : 0; }, $invoices)), 2); ?></div>
-                        <div class="summary-card-change negative">1 invoice overdue</div>
-                    </div>
-                </div>
 
-                <div class="finance-table">
-                    <div class="finance-table-header">
-                        <div class="finance-table-title">Invoice Management</div>
-                        <div class="finance-table-actions">
-                            <div class="filter-group">
-                                <select class="form-input filter-select" id="invoiceStatusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="Paid">Paid</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Overdue">Overdue</option>
-                                    <option value="Draft">Draft</option>
-                                </select>
-                                <select class="form-input filter-select" id="invoiceClientFilter">
-                                    <option value="">All Clients</option>
-                                    <option value="ABC Manufacturing">ABC Manufacturing</option>
-                                    <option value="XYZ Industries">XYZ Industries</option>
-                                    <option value="Tech Solutions">Tech Solutions</option>
-                                    <option value="Global Corp">Global Corp</option>
-                                    <option value="Local Business">Local Business</option>
-                                </select>
-                                <button class="btn btn-outline" id="clearInvoiceFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
-                                </button>
+                            <div class="finance-table">
+                                <div class="finance-table-header">
+                                    <div class="finance-table-title">Invoice Management</div>
+                                    <div class="finance-table-actions">
+                                        <div class="filter-group">
+                                            <select class="form-input filter-select" id="invoiceStatusFilter">
+                                                <option value="">All Status</option>
+                                                <option value="Paid">Paid</option>
+                                                <option value="Pending">Pending</option>
+                                                <option value="Overdue">Overdue</option>
+                                                <option value="Draft">Draft</option>
+                                            </select>
+                                            <select class="form-input filter-select" id="invoiceClientFilter">
+                                                <option value="">All Clients</option>
+                                                <option value="ABC Manufacturing">ABC Manufacturing</option>
+                                                <option value="XYZ Industries">XYZ Industries</option>
+                                                <option value="Tech Solutions">Tech Solutions</option>
+                                                <option value="Global Corp">Global Corp</option>
+                                                <option value="Local Business">Local Business</option>
+                                            </select>
+                                            <button class="btn btn-outline" id="clearInvoiceFilters">
+                                                <i class="fas fa-times"></i>
+                                                <span>Clear</span>
+                                            </button>
+                                        </div>
+                                        <button class="btn btn-primary" id="addInvoiceBtn">
+                                            <i class="fas fa-plus"></i>
+                                            <span>Create Invoice</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Invoice #</th>
+                                                <th>Client</th>
+                                                <th>Amount</th>
+                                                <th>Due Date</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($invoices as $invoice): ?>
+                                            <tr>
+                                                <td><?php echo htmlspecialchars($invoice['invoice_no']); ?></td>
+                                                <td><?php echo htmlspecialchars($invoice['client']); ?></td>
+                                                <td>₱<?php echo number_format($invoice['amount'], 2); ?></td>
+                                                <td><?php echo date('M d, Y', strtotime($invoice['due_date'])); ?></td>
+                                                <td><span class="status-badge <?php echo strtolower($invoice['status']); ?>"><?php echo $invoice['status']; ?></span></td>
+                                                <td>
+                                                    <button class="btn btn-outline btn-sm view-invoice-btn" 
+                                                            data-id="<?php echo $invoice['id']; ?>"
+                                                            data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>"
+                                                            data-client="<?php echo htmlspecialchars($invoice['client']); ?>"
+                                                            data-amount="<?php echo $invoice['amount']; ?>"
+                                                            data-due="<?php echo $invoice['due_date']; ?>"
+                                                            data-status="<?php echo $invoice['status']; ?>">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline btn-sm edit-invoice-btn" 
+                                                            data-id="<?php echo $invoice['id']; ?>"
+                                                            data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>"
+                                                            data-client="<?php echo htmlspecialchars($invoice['client']); ?>"
+                                                            data-amount="<?php echo $invoice['amount']; ?>"
+                                                            data-due="<?php echo $invoice['due_date']; ?>"
+                                                            data-status="<?php echo $invoice['status']; ?>">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-danger btn-sm delete-invoice-btn" 
+                                                            data-id="<?php echo $invoice['id']; ?>"
+                                                            data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <button class="btn btn-primary" id="addInvoiceBtn">
-                                <i class="fas fa-plus"></i>
-                                <span>Create Invoice</span>
-                            </button>
                         </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Invoice #</th>
-                                    <th>Client</th>
-                                    <th>Amount</th>
-                                    <th>Due Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($invoices as $invoice): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($invoice['invoice_no']); ?></td>
-                                    <td><?php echo htmlspecialchars($invoice['client']); ?></td>
-                                    <td>₱<?php echo number_format($invoice['amount'], 2); ?></td>
-                                    <td><?php echo date('M d, Y', strtotime($invoice['due_date'])); ?></td>
-                                    <td><span class="status-badge <?php echo strtolower($invoice['status']); ?>"><?php echo $invoice['status']; ?></span></td>
-                                    <td>
-                                        <button class="btn btn-outline btn-sm view-invoice-btn" 
-                                                data-id="<?php echo $invoice['id']; ?>"
-                                                data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>"
-                                                data-client="<?php echo htmlspecialchars($invoice['client']); ?>"
-                                                data-amount="<?php echo $invoice['amount']; ?>"
-                                                data-due="<?php echo $invoice['due_date']; ?>"
-                                                data-status="<?php echo $invoice['status']; ?>">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-outline btn-sm edit-invoice-btn" 
-                                                data-id="<?php echo $invoice['id']; ?>"
-                                                data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>"
-                                                data-client="<?php echo htmlspecialchars($invoice['client']); ?>"
-                                                data-amount="<?php echo $invoice['amount']; ?>"
-                                                data-due="<?php echo $invoice['due_date']; ?>"
-                                                data-status="<?php echo $invoice['status']; ?>">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-danger btn-sm delete-invoice-btn" 
-                                                data-id="<?php echo $invoice['id']; ?>"
-                                                data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
 
             <!-- Budgeting Tab -->
-            <div class="tab-content" id="budgeting">
+            <div class="fin-tabs-content" id="budgeting">
                 <div class="summary-cards">
                     <div class="summary-card">
                         <div class="summary-card-header">
@@ -1761,16 +1232,12 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                         <label for="expenseCategory" class="form-label">Category</label>
                         <select id="expenseCategory" name="category" class="form-input" required>
                             <option value="">Select Category</option>
-                            <option value="Raw Materials">Raw Materials</option>
-                            <option value="Logistics">Logistics</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Equipment">Equipment</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Marketing">Marketing</option>
-                            <option value="Office Supplies">Office Supplies</option>
-                            <option value="Insurance">Insurance</option>
-                            <option value="Training">Training</option>
-                            <option value="Software">Software</option>
+                            <option value="Production Costs">Production Costs</option>
+                            <option value="Packaging & Logistics">Packaging & Logistics</option>                                <option value="Operating & Administrative">Operating & Administrative</option>
+                            <option value="Sales & Marketing">Sales & Marketing</option>
+                            <option value="Financial Expenses">Financial Expenses</option>
+                            <option value="R&D / Quality Control">R&D / Quality Control</option>
+                            <option value="Other Expenses">Other Expenses</option>
                         </select>
                     </div>
                 </div>
@@ -2051,6 +1518,61 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
         </div>
     </div>
 
+    <script>
+        const ctx = document.getElementById('exinChart').getContext('2d');
+        let exinChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['January', 'February', 'March', 'April'],
+                datasets: [
+                    {
+                        label: 'Income',
+                        borderColor: 'green',
+                        data: [5000, 6000, 7000, 8000],
+                        fill: false
+                    },
+                    {
+                        label: 'Expenses',
+                        borderColor: 'red',
+                        data: [4000, 4500, 5000, 5500],
+                        fill: false
+                    }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+                });
+
+                function updateChart(period) {
+                    let labels, incomeData, expensesData;
+                    if (period === 'monthly') {
+                        labels = ['January', 'February', 'March', 'April'];
+                        incomeData = [5000, 6000, 7000, 8000];
+                        expensesData = [4000, 4500, 5000, 5500];
+                    } else if (period === 'quarterly') {
+                        labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+                        incomeData = [18000, 20000, 22000, 24000];
+                        expensesData = [13500, 15000, 16500, 18000];
+                    } else if (period === 'yearly') {
+                        labels = ['2020', '2021', '2022', '2023'];
+                        incomeData = [70000, 75000, 80000, 85000];
+                        expensesData = [55000, 60000, 65000, 70000];
+                    }
+
+                    exinChart.data.labels = labels;
+                    exinChart.data.datasets[0].data = incomeData;
+                    exinChart.data.datasets[1].data = expensesData;
+                    exinChart.update();
+                }
+    </script>
+
+
     <script src="assets/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -2113,7 +1635,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.querySelector('.sidebar');
             const financeTabs = document.querySelectorAll('.finance-tab');
-            const tabContents = document.querySelectorAll('.tab-content');
+            const tabContents = document.querySelectorAll('.fin-tabs-content');
 
             // Mobile menu toggle
             if (mobileMenuToggle) {
@@ -2526,11 +2048,11 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 console.error('cancelDeleteBtn not found');
             }
 
-            // Add Expense functionality
+            // Add New Expense functionality
             if (addExpenseBtn) {
-                console.log('Add expense button found, adding event listener');
+                console.log('Add new expense button found, adding event listener');
                 addExpenseBtn.addEventListener('click', function() {
-                    console.log('Add expense button clicked');
+                    console.log('Add new expense button clicked');
                     
                     // Reset form
                     if (expenseForm) expenseForm.reset();
@@ -2545,13 +2067,13 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                     // Show modal
                     if (expenseModal) {
                         expenseModal.style.display = 'flex';
-                        console.log('Add expense modal opened');
+                        console.log('Add new expense modal opened');
                     } else {
                         console.error('Expense modal not found');
                     }
                 });
             } else {
-                console.error('Add expense button not found');
+                console.error('Add new expense button not found');
             }
 
             // Simple button event listeners
@@ -2623,7 +2145,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             // Debug: Check if buttons exist
             console.log('Edit buttons found:', document.querySelectorAll('.edit-expense-btn').length);
             console.log('Delete buttons found:', document.querySelectorAll('.delete-expense-btn').length);
-            console.log('Add expense button found:', document.getElementById('addExpenseBtn') ? 'Yes' : 'No');
+            console.log('Add new expense button found:', document.getElementById('addExpenseBtn') ? 'Yes' : 'No');
             console.log('Filter elements found:', {
                 search: document.getElementById('expenseSearchFilter') ? 'Yes' : 'No',
                 category: document.getElementById('expenseCategoryFilter') ? 'Yes' : 'No',
@@ -3484,13 +3006,13 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             // Simple test to verify JavaScript is working
             console.log('JavaScript loaded successfully');
             
-            // Test if we can find the add expense button
+            // Test if we can find the add new expense button
             const testBtn = document.getElementById('addExpenseBtn');
             if (testBtn) {
-                console.log('✅ Add Expense button found');
+                console.log('✅ Add New Expense button found');
                 testBtn.style.border = '2px solid green'; // Visual indicator
             } else {
-                console.log('❌ Add Expense button NOT found');
+                console.log('❌ Add New Expense button NOT found');
             }
             
             // Test if we can find the expense modal
