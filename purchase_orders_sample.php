@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $sql = "SELECT po.*, s.name AS supplier_name 
         FROM purchase_orders_sample po 
         LEFT JOIN suppliers s ON po.supplier_id = s.id 
-        ORDER BY po.order_date DESC";
+        ORDER BY po.id DESC";
 $result = $conn->query($sql);
 
 // Prefill logic for quotations.item column and fetch quotation_no
@@ -414,6 +414,36 @@ if (isset($_GET['quotation_id'])) {
         background-color: #e0f2fe; /* light blue */
     }
 
+    .clear-filter-btn {
+        background: #fff;
+        color: #2563eb;
+        border: 2px solid #2563eb;
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+        margin-left: 4px;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .clear-filter-btn:hover, .clear-filter-btn:focus {
+        background: #2563eb;
+        color: #fff;
+        border-color: #1e40af;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.18);
+        outline: none;
+    }
+
+    .clear-filter-btn i {
+        pointer-events: none;
+    }
+
 </style>
 
 </head>
@@ -578,8 +608,13 @@ if (isset($_GET['quotation_id'])) {
                 <option value="To-Deliver">To-Deliver</option>
                 <option value="Cancelled">Cancelled</option>
             </select>
-            <button type="button" id="applyFilterBtn" style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:8px 18px; font-weight:600; cursor:pointer;">Apply</button>
-        </form>
+            </form>
+            <!-- Clear Filter Button -->
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="clearFilterBtn" title="Clear Filter" class="clear-filter-btn">
+                    <i class="fa fa-times-circle"></i>
+                </button>
+            </div>
     </div>
     <div>
         <table id="po-history-table">
@@ -624,7 +659,7 @@ if (isset($_GET['quotation_id'])) {
                         if (count($item_rows) > 0) {
                             $first = array_shift($item_rows);
                             echo "<tr class='main-po-row'>";
-                            echo "<td rowspan='$rowspan'>" . htmlspecialchars($row['id']) . "</td>";
+                            echo "<td rowspan='$rowspan'>" . htmlspecialchars($row['id']) . "</td>"; // Use DB id for No
                             echo "<td rowspan='$rowspan'>" . htmlspecialchars($row['order_number']) . "</td>";
                             echo "<td rowspan='$rowspan'>" . date('m/d/Y', strtotime($row['order_date'])) . "</td>";
                             echo "<td rowspan='$rowspan'>" . htmlspecialchars($row['terms']) . "</td>";
@@ -706,7 +741,7 @@ if (isset($_GET['quotation_id'])) {
                 <option value="">Select P.O. No to Print</option>
                 <?php
                 // Fetch all P.O. Numbers for dropdown
-                $po_numbers = $conn->query("SELECT order_number FROM purchase_orders_sample ORDER BY order_date DESC");
+                $po_numbers = $conn->query("SELECT order_number FROM purchase_orders_sample ORDER BY id DESC");
                 while ($po = $po_numbers->fetch_assoc()) {
                     echo '<option value="' . htmlspecialchars($po['order_number']) . '">' . htmlspecialchars($po['order_number']) . '</option>';
                 }
@@ -791,51 +826,51 @@ if (isset($_GET['quotation_id'])) {
         }
 
         input, select {
-    padding: 4px 6px;
-    font-size: 13px;
-}
+        padding: 4px 6px;
+        font-size: 13px;
+        }
 
-.form-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 12px;
-    align-items: flex-start;
-}
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+            align-items: flex-start;
+        }
 
-.form-row > div {
-    display: flex;
-    flex-direction: column;
-}
+        .form-row > div {
+            display: flex;
+            flex-direction: column;
+        }
 
-#line-items-table input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 4px;
-    font-size: 13px;
-}
+        #line-items-table input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 4px;
+            font-size: 13px;
+        }
 
-table th:nth-child(1), table td:nth-child(1) { width: 25%; } /* Description */
-table th:nth-child(2), table td:nth-child(2) { width: 15%; } /* Part No */
-table th:nth-child(3), table td:nth-child(3) { width: 15%; } /* Delivery Date */
-table th:nth-child(4), table td:nth-child(4) { width: 10%; } /* Quantity */
-table th:nth-child(5), table td:nth-child(5) { width: 10%; } /* Net Price */
-table th:nth-child(6), table td:nth-child(6) { width: 10%; } /* Sales Tax */
-table th:nth-child(7), table td:nth-child(7) { width: 15%; } /* Amount */
+        table th:nth-child(1), table td:nth-child(1) { width: 25%; } /* Description */
+        table th:nth-child(2), table td:nth-child(2) { width: 15%; } /* Part No */
+        table th:nth-child(3), table td:nth-child(3) { width: 15%; } /* Delivery Date */
+        table th:nth-child(4), table td:nth-child(4) { width: 10%; } /* Quantity */
+        table th:nth-child(5), table td:nth-child(5) { width: 10%; } /* Net Price */
+        table th:nth-child(6), table td:nth-child(6) { width: 10%; } /* Sales Tax */
+        table th:nth-child(7), table td:nth-child(7) { width: 15%; } /* Amount */
 
-.main-content {
-    padding: 15px;
-    background: #fff;
-}
+        .main-content {
+            padding: 15px;
+            background: #fff;
+        }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    background: #fff;
-    padding: 50px;
-    border-radius: 10px;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.24);
-}
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 50px;
+            border-radius: 10px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.24);
+        }
 
 
     </style>
@@ -1008,9 +1043,9 @@ table th:nth-child(7), table td:nth-child(7) { width: 15%; } /* Amount */
         });
 
         filteredGroups.sort(function(a, b) {
-            const dateA = new Date(a[0].querySelector('td:nth-child(3)').textContent.trim());
-            const dateB = new Date(b[0].querySelector('td:nth-child(3)').textContent.trim());
-            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            const idA = parseInt(a[0].querySelector('td:nth-child(1)').textContent.trim(), 10);
+            const idB = parseInt(b[0].querySelector('td:nth-child(1)').textContent.trim(), 10);
+            return sortOrder === 'asc' ? idA - idB : idB - idA;
         });
 
         tbody.innerHTML = '';
@@ -1022,9 +1057,12 @@ table th:nth-child(7), table td:nth-child(7) { width: 15%; } /* Amount */
     document.getElementById('sortOrder').addEventListener('change', filterPOHistory);
     document.getElementById('statusFilter').addEventListener('change', filterPOHistory);
 
-    // Optionally, remove the Apply button from the DOM
-    const applyBtn = document.getElementById('applyFilterBtn');
-    if (applyBtn) applyBtn.style.display = 'none';
+    // Clear Filter Button logic
+    document.getElementById('clearFilterBtn').addEventListener('click', function() {
+        document.getElementById('sortOrder').value = 'desc';
+        document.getElementById('statusFilter').value = '';
+        filterPOHistory();
+    });
     </script>
 
 </body>
