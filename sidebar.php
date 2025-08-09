@@ -1,8 +1,12 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 $currentPage = basename($_SERVER['PHP_SELF']);
-$supplyChainPages = ['supply_chain.php', 'transactions.php']; // <-- include transactions.php
+$supplyChainPages = ['supply_chain.php', 'transactions.php'];
 $isSupplyChainPage = in_array($currentPage, $supplyChainPages);
 $isCustomerServicePage = ($currentPage === 'customer_service.php');
+$userRole = isset($_SESSION['role']) ? $_SESSION['role'] : 'employee'; // default to employee
 ?>
 
 <div class="sidebar">
@@ -26,24 +30,12 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
                 <span>Dashboard</span>
             </a>
 
-            <a href="finances.php" class="menu-item <?= ($currentPage == 'finances.php') ? 'active' : '' ?>">
-                <i class="fas fa-money-bill-wave"></i>
-                <span>Finances</span>
-            </a>
-
-            <a href="human_resources.php" class="menu-item <?= ($currentPage == 'human_resources.php') ? 'active' : '' ?>">
-                <i class="fas fa-users"></i>
-                <span>Human Resources</span>
-            </a>
-
-            <!-- Dropdown Toggle -->
+            <!-- Inventory Dropdown (visible to all roles) -->
             <div class="menu-item menu-dropdown <?= $isSupplyChainPage ? 'open active' : '' ?>" id="inventoryDropdown">
                 <i class="fas fa-link"></i>
                 <span> Inventory </span>
                 <i class="fas fa-chevron-down"></i>
             </div>
-
-            <!-- Dropdown Menu -->
             <div class="dropdown-menu <?= $isSupplyChainPage ? 'open' : '' ?>" id="inventoryDropdownMenu">
                 <a href="supply_chain.php" class="menu-item <?= ($currentPage == 'supply_chain.php') ? 'active' : '' ?>">
                     <i class="fas fa-industry"></i>
@@ -55,25 +47,35 @@ $isCustomerServicePage = ($currentPage === 'customer_service.php');
                 </a>
             </div>
 
+            <?php if ($userRole === 'admin'): ?>
+            <!-- Admin-only links -->
+            <a href="finances.php" class="menu-item <?= ($currentPage == 'finances.php') ? 'active' : '' ?>">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Finances</span>
+            </a>
+            <a href="human_resources.php" class="menu-item <?= ($currentPage == 'human_resources.php') ? 'active' : '' ?>">
+                <i class="fas fa-users"></i>
+                <span>Human Resources</span>
+            </a>
             <a href="customer_service.php" class="menu-item <?= ($currentPage == 'customer_service.php') ? 'active' : '' ?>">
                 <i class="fas fa-headset"></i>
                 <span>Customer Service</span>
             </a>
-
             <a href="reports.php" class="menu-item <?= ($currentPage == 'reports.php') ? 'active' : '' ?>">
                 <i class="fas fa-chart-bar"></i>
                 <span>Reports</span>
             </a>
+            <?php endif; ?>
         </div>
 
         <div class="menu-section">
             <div class="menu-section-title">System</div>
-
+            <?php if ($userRole === 'admin'): ?>
             <a href="finished_goods.php" class="menu-item <?= ($currentPage == 'finished_goods.php') ? 'active' : '' ?>">
                 <i class="fas fa-cog"></i>
                 <span>System Administration</span>
             </a>
-
+            <?php endif; ?>
             <a href="logout.php" class="menu-item <?= ($currentPage == 'logout.php') ? 'active' : '' ?>" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
@@ -165,5 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sessionStorage.setItem('supplyChainOpen', 'false');
         }
     });
+});
+</script>
 });
 </script>

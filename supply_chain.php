@@ -28,8 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Log the action
                 $log_text = "Added note for date: $note_date";
-                $conn->query("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES ('$note_date', '$log_text (Note: $note_text)', 'System')");
-                
+                $log_note_text = $log_text . " (Note: $note_text)";
+                $stmt_log = $conn->prepare("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES (?, ?, 'System')");
+                $stmt_log->bind_param("ss", $note_date, $log_note_text);
+                $stmt_log->execute();
+
                 $_SESSION['message'] = "Note added successfully!";
             } 
             elseif ($_POST['action'] === 'edit_note') {
@@ -43,7 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Log the action
                 $log_text = "Edited note ID: $note_id";
-                $conn->query("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES ('$note_date', '$log_text (New note: $note_text)', 'System')");
+                $log_note_text = $log_text . " (New note: $note_text)";
+                $stmt_log = $conn->prepare("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES (?, ?, 'System')");
+                $stmt_log->bind_param("ss", $note_date, $log_note_text);
+                $stmt_log->execute();
                 
                 $_SESSION['message'] = "Note updated successfully!";
             } 
@@ -59,7 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Log the action
                 $log_text = "Deleted note ID: $note_id";
-                $conn->query("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES (NOW(), '$log_text (Original note: {$note['note_text']})', 'System')");
+                $log_note_text = $log_text . " (Original note: {$note['note_text']})";
+                $now = date('Y-m-d H:i:s');
+                $stmt_log = $conn->prepare("INSERT INTO calendar_schedule_note_history (note_date, note_text, user) VALUES (?, ?, 'System')");
+                $stmt_log->bind_param("ss", $now, $log_note_text);
+                $stmt_log->execute();
                 
                 $_SESSION['message'] = "Note deleted successfully!";
             }
@@ -145,6 +155,18 @@ if ($logs_result && $logs_result->num_rows > 0) {
         ];
     }
 }
+
+// Prepare calendar events for FullCalendar (user notes only)
+$calendar_events = [];
+foreach ($calendar_notes as $note) {
+    $calendar_events[] = [
+        'id' => $note['id'],
+        'title' => htmlspecialchars($note['text']),
+        'start' => $note['date'],
+        'allDay' => true,
+    ];
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1269,7 +1291,7 @@ if ($logs_result && $logs_result->num_rows > 0) {
         }
     }
 
-        /* Audit Log Styles */
+    /* Audit Log Styles */
     .audit-log-container {
         position: fixed;
         bottom: 20px;
@@ -1548,71 +1570,34 @@ if ($logs_result && $logs_result->num_rows > 0) {
         }
     }
 
-    
+    /* Add this to your existing CSS */
+#calendar {
+    width: 100% !important;
+    margin: 0 auto;
+    overflow: hidden !important; /* This removes the scrollbar */
+}
+
+/* Remove scrollbars from FullCalendar inner containers */
+.fc-scroller,
+.fc-daygrid-body,
+.fc-scrollgrid-sync-table {
+    overflow: hidden !important;
+}
+
+.fc-view-harness {
+    min-height: auto !important;
+    height: auto !important;
+}
+
+.fc .fc-scroller-liquid-absolute {
+    position: relative !important;
+    overflow: hidden !important;
+}
     </style>
 </head>
 <body>
     <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="company-logo">
-                <img src="images/logo.png" alt="Company Logo">
-            </div>
-            <div class="company-name">James Polymer</div>
-            <div class="company-subtitle">Manufacturing Corporation</div>
-        </div>
-        <div class="sidebar-menu">
-            <div class="menu-section">
-                <div class="menu-section-title">Main Navigation</div>
-                <a href="index.php" class="menu-item" data-module="dashboard">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="finances.php" class="menu-item" data-module="finances">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <span>Finances</span>
-                </a>
-                <a href="human_resources.php" class="menu-item" data-module="human-resources">
-                    <i class="fas fa-users"></i>
-                    <span>Human Resources</span>
-                </a>
-                <div class="menu-item menu-dropdown open" id="supplyChainDropdown">
-                    <i class="fas fa-link"></i>
-                    <span>Inventory</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="dropdown-menu open" id="supplyChainDropdownMenu">
-                    <a href="supply_chain.php" class="menu-item active" data-module="manufacturing">
-                        <i class="fas fa-industry"></i>
-                        <span>Manufacturing</span>
-                    </a>
-                    <a href="transactions.php" class="menu-item" data-module="transactions">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>Transactions</span>
-                    </a>
-                </div>
-                <a href="customer_service.php" class="menu-item" data-module="customer-service">
-                    <i class="fas fa-headset"></i>
-                    <span>Customer Service</span>
-                </a>
-                <a href="reports.php" class="menu-item" data-module="reports">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Reports</span>
-                </a>
-            </div>
-            <div class="menu-section">
-                <div class="menu-section-title">System</div>
-                <a href="finished_goods.php" class="menu-item" data-module="system-admin">
-                    <i class="fas fa-cog"></i>
-                    <span>System Administration</span>
-                </a>
-                <a href="logout.php" class="menu-item" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </div>
+ <?php include 'sidebar.php'; ?>
 
     <!-- Main Content Area -->
     <div class="main-content">
@@ -1658,7 +1643,7 @@ if ($logs_result && $logs_result->num_rows > 0) {
                 <!-- Schedule Tab -->
                 <div class="tab-pane active" id="schedule">
                     <div class="calendar-container">
-                        <div style="flex: 2; max-width:900px;">
+                        <div style="flex: 2; max-width:1000px;">
                             <h2>Production Calendar</h2>
                             <?php if (isset($_SESSION['message'])): ?>
                                 <div class="alert alert-success" style="background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
@@ -1671,7 +1656,7 @@ if ($logs_result && $logs_result->num_rows > 0) {
                                 </div>
                             <?php endif; ?>
                             
-                            <!-- Literal Calendar -->
+                           <!-- Literal Calendar -->
                             <div id="calendar" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:20px; margin-bottom:32px;"></div>
                             
                             <button class="btn btn-primary" onclick="openAddNoteModal()">
@@ -1679,8 +1664,8 @@ if ($logs_result && $logs_result->num_rows > 0) {
                             </button>
                         </div>
                     </div>
-
-                    <div class="calendar-notes-list">
+                        
+                        <div class="calendar-notes-list">
                             <h2>Recent Notes</h2>
                             <?php if (empty($calendar_notes)): ?>
                                 <p>No notes found. Add a note to get started.</p>
@@ -1706,7 +1691,33 @@ if ($logs_result && $logs_result->num_rows > 0) {
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
-                </div>
+
+                    <!-- Audit Log Container -->
+                    <div class="audit-log-container" id="auditLogContainer">
+                        <div class="audit-log-header" id="auditLogHeader">
+                                <span>Audit Log</span>
+                                <button class="audit-log-toggle" id="auditLogToggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                        <div class="audit-log-content" id="auditLogContent" style="display:none;">
+                            <?php if (empty($audit_logs)): ?>
+                        <div class="audit-log-item">No audit log entries found</div>
+                            <?php else: ?>
+                                <?php foreach ($audit_logs as $log): ?>
+                        <div class="audit-log-item">
+                        <div class="audit-log-time">
+                            <?php echo date('M d, Y H:i', strtotime($log['date'])); ?>
+                        </div>
+                                <div class="audit-log-text">
+                            <?php echo htmlspecialchars($log['text']); ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
                 <!-- Raw Materials Tab -->
                 <div class="tab-pane" id="raw-materials">
@@ -1976,32 +1987,6 @@ if ($logs_result && $logs_result->num_rows > 0) {
         </div>
     </div>
 
-        <!-- Audit Log Container -->
-    <div class="audit-log-container" id="auditLogContainer">
-    <div class="audit-log-header" id="auditLogHeader">
-        <span>Audit Log</span>
-        <button class="audit-log-toggle" id="auditLogToggle">
-            <i class="fas fa-chevron-down"></i>
-        </button>
-    </div>
-    <div class="audit-log-content" id="auditLogContent" style="display:none;">
-        <?php if (empty($audit_logs)): ?>
-            <div class="audit-log-item">No audit log entries found</div>
-        <?php else: ?>
-            <?php foreach ($audit_logs as $log): ?>
-                <div class="audit-log-item">
-                    <div class="audit-log-time">
-                        <?php echo date('M d, Y H:i', strtotime($log['date'])); ?>
-                    </div>
-                    <div class="audit-log-text">
-                        <?php echo htmlspecialchars($log['text']); ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
-</div>
-
 
     <!-- Add Raw Material Modal -->
     <div id="addMaterialModal" class="modal-overlay" style="display:none;">
@@ -2261,11 +2246,52 @@ if ($logs_result && $logs_result->num_rows > 0) {
         </div>
     </div>
 
-    <!-- Add FullCalendar CSS/JS -->
+<!-- Note Details Modal -->
+<div id="noteDetailsModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeNoteDetailsModal()">&times;</span>
+        <div class="form-section" style="box-shadow:none; border:none;">
+            <div class="form-header">
+                <h2 class="form-title"><i class="fas fa-sticky-note"></i> Note Details</h2>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-calendar-day"></i> Date</label>
+                    <p id="noteDetailsDate" class="form-input" style="border:none; background:none;"></p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-user"></i> User</label>
+                    <p id="noteDetailsUser" class="form-input" style="border:none; background:none;"></p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-sticky-note"></i> Note</label>
+                    <p id="noteDetailsText" class="form-input" style="border:none; background:none; white-space:pre-line;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+   <!-- Add FullCalendar CSS/JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const calendarEvents = <?php echo json_encode($calendar_events); ?>;
+        const noteDetailsMap = {};
+<?php foreach ($calendar_notes as $note): ?>
+noteDetailsMap[<?php echo $note['id']; ?>] = {
+    id: <?php echo $note['id']; ?>,
+    date: "<?php echo addslashes($note['date']); ?>",
+    text: "<?php echo addslashes($note['text']); ?>",
+    user: "<?php echo addslashes($note['user']); ?>"
+};
+<?php endforeach; ?>
+
         // Tab functionality
         const tabs = document.querySelectorAll('.tab');
         const modules = document.querySelectorAll('.module-content');
@@ -2384,17 +2410,22 @@ if ($logs_result && $logs_result->num_rows > 0) {
                 initialView: 'dayGridMonth',
                 height: 500,
                 headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+                events: calendarEvents, // <-- This line makes notes appear as events
                 dateClick: function(info) {
-                    // Set the date in the add note modal when a date is clicked
-                    document.getElementById('noteDate').value = info.dateStr;
-                    openAddNoteModal();
-                }
-            });
-            calendar.render();
+                document.getElementById('noteDate').value = info.dateStr;
+                openAddNoteModal();
+            },
+                eventClick: function(info) {
+                // Optional: Show note details or open edit modal
+                // Example: openEditNoteModal(info.event.id, info.event.startStr, info.event.title);
+                
+            }
+        });
+        calendar.render();
         }
     });
 
@@ -2502,6 +2533,18 @@ if ($logs_result && $logs_result->num_rows > 0) {
         document.getElementById('deleteNoteModal').style.display = 'none';
     }
 
+    function openNoteDetailsModal(noteId) {
+    const note = noteDetailsMap[noteId];
+    if (!note) return;
+    document.getElementById('noteDetailsDate').textContent = note.date;
+    document.getElementById('noteDetailsUser').textContent = note.user;
+    document.getElementById('noteDetailsText').textContent = note.text;
+    document.getElementById('noteDetailsModal').style.display = 'flex';
+    }
+    function closeNoteDetailsModal() {
+    document.getElementById('noteDetailsModal').style.display = 'none';
+    }
+
     // Initialize raw materials functionality
     document.addEventListener('DOMContentLoaded', function() {
         // Add Material Modal
@@ -2569,7 +2612,8 @@ if ($logs_result && $logs_result->num_rows > 0) {
             });
         }
     });
-     // Audit Log Toggle 
+
+    // Audit Log Toggle 
 document.addEventListener('DOMContentLoaded', function() {
     const auditLogContainer = document.getElementById('auditLogContainer');
     const auditLogHeader = document.getElementById('auditLogHeader');
