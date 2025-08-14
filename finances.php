@@ -10,7 +10,51 @@ require_once 'db_connect.php';
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
 
-// Create necessary tables if they don't exist
+// Create necessary table if it doesn't exist
+$create_accounts_table = "CREATE TABLE IF NOT EXISTS accounts_payable (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vendor_name VARCHAR(255) NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    due_date DATE NOT NULL,
+    status ENUM('unpaid','paid','overdue') DEFAULT 'unpaid',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)";
+$conn->query($create_accounts_table); // <-- This must run BEFORE the SELECT
+
+// Fetch Accounts Payable Summary
+$payableSummary = [
+    'total' => 0,
+    'dueSoon' => 0,
+    'overdue' => 0
+];
+
+$sql = "
+    SELECT 
+        SUM(amount) AS total,
+        SUM(CASE WHEN due_date >= CURDATE() AND due_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN amount ELSE 0 END) AS dueSoon,
+        SUM(CASE WHEN due_date < CURDATE() THEN amount ELSE 0 END) AS overdue
+    FROM accounts_payable
+";
+$result = $conn->query($sql);
+
+if ($result && $row = $result->fetch_assoc()) {
+    $payableSummary['total'] = $row['total'] ?? 0;
+    $payableSummary['dueSoon'] = $row['dueSoon'] ?? 0;
+    $payableSummary['overdue'] = $row['overdue'] ?? 0;
+}
+
+
+$create_transactions_table = "CREATE TABLE IF NOT EXISTS financial_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transaction_date DATE NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status ENUM('Paid', 'Pending', 'Received') DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)";
+
 $create_expenses_table = "CREATE TABLE IF NOT EXISTS expenses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date DATE NOT NULL,
@@ -380,41 +424,6 @@ if ($budget_result) {
     $budget = [];
 }
 
-// Add sample data if tables are empty
-if (empty($expenses)) {
-    $sample_expenses = [
-        ['date' => '2024-01-15', 'category' => 'Utilities', 'description' => 'Electricity bill for January', 'amount' => 2500.00, 'status' => 'Paid'],
-        ['date' => '2024-01-20', 'category' => 'Supplies', 'description' => 'Office supplies and materials', 'amount' => 1500.00, 'status' => 'Pending'],
-        ['date' => '2024-01-25', 'category' => 'Maintenance', 'description' => 'Equipment maintenance and repairs', 'amount' => 3500.00, 'status' => 'Paid']
-    ];
-    
-    $stmt = $conn->prepare("INSERT INTO expenses (date, category, description, amount, status) VALUES (?, ?, ?, ?, ?)");
-    foreach ($sample_expenses as $expense) {
-        $stmt->bind_param("sssds", $expense['date'], $expense['category'], $expense['description'], $expense['amount'], $expense['status']);
-        if ($stmt->execute()) {
-            error_log("Sample expense inserted with ID: " . $stmt->insert_id);
-        } else {
-            error_log("Error inserting sample expense: " . $stmt->error);
-        }
-    }
-    $stmt->close();
-    
-    // Reload expenses after adding sample data
-    $expenses_result = $conn->query($expenses_query);
-    $expenses = [];
-    while ($row = $expenses_result->fetch_assoc()) {
-        $expenses[] = [
-            'id' => $row['id'],
-            'date' => $row['date'],
-            'category' => $row['category'],
-            'description' => $row['description'],
-            'amount' => $row['amount'],
-            'status' => $row['status']
-        ];
-    }
-    error_log("Added sample expenses, total: " . count($expenses));
-}
-
 // Calculate totals
 $total_expenses = array_sum(array_column($expenses, 'amount'));
 $total_income = array_sum(array_column($income, 'amount'));
@@ -456,9 +465,9 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
         <!-- Finance Tabs -->        
         <div class="content">
             <div class="finance-tabs">
-                <button class="finance-tab active" data-tab="dashboard">
+                <button class="finance-tab active" data-tab="insights">
                     <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
+                    <span>Insights</span>
                 </button>
                 <button class="finance-tab" data-tab="expenses">
                     <i class="fas fa-receipt"></i>
@@ -478,64 +487,165 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 </button>
             </div>
 
-            <!-- Finances - Dashboard Tab -->
-            <div class="fin-tabs-content active" id="dashboard">
-                <!-- Finances -  Dashboard Summary | Cards | Charts | Tables -->
+            <!-- Finances - Insights Tab -->
+            <div class="fin-tabs-content active" id="insights">
                 <div class="summary-cards">
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Total Expenses</div>
-                            <div class="summary-card-icon dashboard">
-                                <i class="fas fa-money-bill-wave"></i>
+                    <?php
+                    // Prepare the data array dynamically
+                    $summary_data = [
+                        [
+                            'title' => 'Total Expenses',
+                            'icon' => 'fas fa-receipt',
+                            'value' => $total_expenses,
+                            'change' => '12.5% from last month',
+                            'change_class' => 'positive'
+                        ],
+                        [
+                            'title' => 'Total Income',
+                            'icon' => 'fas fa-money-bill',
+                            'value' => $total_income,
+                            'change' => '12.5% from last month',
+                            'change_class' => 'positive'
+                        ],
+                        [
+                            'title' => 'Net Profit',
+                            'icon' => 'fas fa-comment-dollar',
+                            'value' => $total_income -$total_expenses,
+                            'change' => '40% of monthly budget',
+                            'change_class' => 'positive'
+                        ]
+                    ];
+                    ?>
+
+                    <?php foreach ($summary_data as $card): ?>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <div class="summary-card-title"><?= $card['title'] ?></div>
+                                <div class="summary-card-icon"><i class="<?= $card['icon'] ?>"></i></div>
+                            </div>
+                            <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
+                            <div class="summary-card-change <?= $card['change_class'] ?>">
+                                <?php if (!empty($card['change_class'])): ?>
+                                    <i class="fas fa-arrow-up"></i>
+                                <?php endif; ?>
+                                <span><?= $card['change'] ?></span>
                             </div>
                         </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_expenses, 2); ?></div>
-                        <div class="summary-card-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>0% from last month</span>
-                        </div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Total Revenue</div>
-                            <div class="summary-card-icon dashboard">
-                                <i class="fas fa-comment-dollar"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_income, 2); ?></div>
-                        <div class="summary-card-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>0% from last month</span>
-                        </div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Total Net Profit</div>
-                            <div class="summary-card-icon dashboard">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_income - $total_expenses, 2); ?></div>
-                        <div class="summary-card-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>0% from last month</span>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
-                
+
+
+                <!-- Charts & Payable Section -->
                 <div class="charts-section">
+
+                    <!-- Income vs Expenses Chart -->
                     <div class="exp-inc-chart">
                         <div class="exp-inc-chart-header">
                             <div class="exp-inc-chart-title">Monthly Income vs Expenses</div>
                             <div class="exp-inc-chart-controls">
-                                <button class="chart-btn active">Weekly</button>
-                                <button class="chart-btn">Monthly</button>
-                                <button class="chart-btn">Quarterly</button>
+                                <button class="chart-btn active" data-range="weekly">Weekly</button>
+                                <button class="chart-btn" data-range="monthly">Monthly</button>
+                                <button class="chart-btn" data-range="quarterly">Quarterly</button>
                             </div>
                         </div>
                         <div class="chart-placeholder">
-                            <canvas id="exinChart"></canvas>
+                            <canvas id="exinChart" height="100"></canvas>
                         </div>
+                    </div>
+
+                    <!-- Accounts Payable -->
+                    <div class="exp-inc-chart">
+                        <div class="exp-inc-chart-header">
+                            <div class="exp-inc-chart-title">Accounts Payable</div>
+                        </div>
+                        <div class="chart-placeholder">
+                            <canvas id="exinChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Financial Transactions -->
+                <div class="finance-table">
+                    <div class="finance-table-header modern-header">
+                        <div class="finance-table-title">Recent Transactions</div>
+                        <div class="finance-table-actions">
+                            <div class="filter-group">
+                                <input type="text" class="filter-input" id="transactionSearchFilter" placeholder="🔍 Search transactions...">
+
+                                <select class="filter-input" id="transactionTypeFilter">
+                                    <option value="">Type</option>
+                                    <option value="Income">Income</option>
+                                    <option value="Expenses">Expenses</option>
+                                </select>
+                                
+                                <select class="filter-input" id="transactionStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Received">Received</option>
+                                </select>
+                                
+                                <button class="btn-clear" id="clearTransactionFilter">
+                                    <i class="fas fa-times-circle"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Transaction Table -->
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category or Source</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                // Merge income and expenses with type labels
+                                $all_transactions = [];
+
+                                foreach ($expenses as $expense) {
+                                    $expense['type'] = 'Expense';
+                                    $expense['source'] = $expense['category'];
+                                    $all_transactions[] = $expense;
+                                }
+
+                                foreach ($income as $income_item) {
+                                    $income_item['type'] = 'Income';
+                                    $income_item['source'] = $income_item['source'] ?? 'Unknown';
+                                    $all_transactions[] = $income_item;
+                                }
+
+                                // Sort newest first
+                                usort($all_transactions, fn($a, $b) => strtotime($b['date']) - strtotime($a['date']));
+                                // Take only the last 10 transactions
+                                $all_transactions = array_slice($all_transactions, 0, 10);
+                                ?>
+                                
+
+                                <?php foreach ($all_transactions as $item): ?>
+                                    <tr data-id="<?= $item['id'] ?>">
+                                        <td><?= date('M d, Y', strtotime($item['date'])) ?></td>
+                                        <td><?= htmlspecialchars($item['source']) ?></td>
+                                        <td><?= htmlspecialchars($item['description']) ?></td>
+                                        <td>₱<?= number_format($item['amount'], 2) ?></td>
+                                        <td><?= $item['type'] ?></td>
+                                        <td>
+                                            <span class="status-badge <?= strtolower($item['status'] ?? 'paid') ?>">
+                                                <?= $item['status'] ?? 'Paid' ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -543,48 +653,61 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             <!-- Expenses Tab -->
             <div class="fin-tabs-content" id="expenses">
                 <div class="summary-cards">
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Total Expenses</div>
-                            <div class="summary-card-icon expenses">
-                                <i class="fas fa-receipt"></i>
+                    <?php
+                    // Prepare the data array dynamically
+                    $expense_summary_data = [
+                        [
+                            'title' => 'Total Expenses',
+                            'icon' => 'fas fa-receipt',
+                            'value' => $total_expenses,
+                            'change' => '12.5% from last month',
+                            'change_class' => 'positive'
+                        ],
+                        [
+                            'title' => 'Pending Payments',
+                            'icon' => 'fas fa-clock',
+                            'value' => array_sum(array_map(function($expense) { 
+                                return $expense['status'] === 'Pending' ? $expense['amount'] : 0; 
+                            }, $expenses)),
+                            'change' => '3 payments pending',
+                            'change_class' => ''
+                        ],
+                        [
+                            'title' => 'This Month',
+                            'icon' => 'fas fa-calendar',
+                            'value' => $total_expenses * 0.4,
+                            'change' => '40% of monthly budget',
+                            'change_class' => ''
+                        ]
+                    ];
+                    ?>
+
+                    <?php foreach ($expense_summary_data as $card): ?>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <div class="summary-card-title"><?= $card['title'] ?></div>
+                                <div class="summary-card-icon"><i class="<?= $card['icon'] ?>"></i></div>
+                            </div>
+                            <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
+                            <div class="summary-card-change <?= $card['change_class'] ?>">
+                                <?php if (!empty($card['change_class'])): ?>
+                                    <i class="fas fa-arrow-up"></i>
+                                <?php endif; ?>
+                                <span><?= $card['change'] ?></span>
                             </div>
                         </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_expenses, 2); ?></div>
-                        <div class="summary-card-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>12.5% from last month</span>
-                        </div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Pending Payments</div>
-                            <div class="summary-card-icon expenses">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($expense) { return $expense['status'] === 'Pending' ? $expense['amount'] : 0; }, $expenses)), 2); ?></div>
-                        <div class="summary-card-change">3 payments pending</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">This Month</div>
-                            <div class="summary-card-icon expenses">
-                                <i class="fas fa-calendar"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_expenses * 0.4, 2); ?></div>
-                        <div class="summary-card-change">40% of monthly budget</div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
+                <!-- Expense Records Table -->
                 <div class="finance-table">
-                    <div class="finance-table-header">
+                    <div class="finance-table-header modern-header">
                         <div class="finance-table-title">Expense Records</div>
                         <div class="finance-table-actions">
                             <div class="filter-group">
-                                <input type="text" class="form-input filter-select" id="expenseSearchFilter" placeholder="Search expenses...">
-                                <select class="form-input filter-select" id="expenseCategoryFilter">
+                                <input type="text" class="filter-input" id="expenseSearchFilter" placeholder="🔍 Search expenses...">
+
+                                <select class="filter-input" id="expenseCategoryFilter">
                                     <option value="">All Categories</option>
                                     <option value="Production Costs">Production Costs</option>
                                     <option value="Packaging & Logistics">Packaging & Logistics</option>
@@ -594,26 +717,30 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                     <option value="R&D / Quality Control">R&D / Quality Control</option>
                                     <option value="Other Expenses">Other Expenses</option>
                                 </select>
-                                <select class="form-input filter-select" id="expenseStatusFilter">
+
+                                <select class="filter-input" id="expenseStatusFilter">
                                     <option value="">All Status</option>
                                     <option value="Paid">Paid</option>
                                     <option value="Pending">Pending</option>
                                 </select>
-                                <button class="btn btn-outline" id="clearExpenseFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
+
+                                <button class="btn-clear" id="clearExpenseFilters">
+                                    <i class="fas fa-times-circle"></i> Clear
+                                </button>
+
+                                <button class="btn btn-primary" id="addExpenseBtn">
+                                    <i class="fas fa-plus"></i> Add Expense
                                 </button>
                             </div>
-                            <button class="btn btn-primary" id="addExpenseBtn">
-                                <i class="fas fa-plus"></i>
-                                <span>Add New Expense</span>
-                            </button>
                         </div>
                     </div>
+
+                    <!-- Expenses Table -->
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Date</th>
                                     <th>Category</th>
                                     <th>Description</th>
@@ -623,27 +750,44 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php
+                                // Sort expenses by date (newest first) and then by ID (newest first)
+                                usort($expenses, function($a, $b) {
+                                    // First compare by date (descending)
+                                    $dateCompare = strtotime($b['date']) - strtotime($a['date']);
+                                    if ($dateCompare !== 0) {
+                                        return $dateCompare;
+                                    }
+                                    // If dates are equal, compare by ID (descending)
+                                    return $b['id'] - $a['id'];
+                                });
+                                ?>
+
                                 <?php foreach ($expenses as $expense): ?>
-                                <!-- Debug: Expense ID = <?php echo $expense['id']; ?> -->
-                                <tr data-expense-id="<?php echo $expense['id']; ?>">
-                                    <td><?php echo date('M d, Y', strtotime($expense['date'])); ?></td>
-                                    <td><?php echo htmlspecialchars($expense['category']); ?></td>
-                                    <td><?php echo htmlspecialchars($expense['description']); ?></td>
-                                    <td>₱<?php echo number_format($expense['amount'], 2); ?></td>
-                                    <td><span class="status-badge <?php echo strtolower($expense['status']); ?>"><?php echo $expense['status']; ?></span></td>
+                                <tr data-expense-id="<?= $expense['id'] ?>">
+                                    <td><?= $expense['id'] ?></td>
+                                    <td><?= date('M d, Y', strtotime($expense['date'])) ?></td>
+                                    <td><?= htmlspecialchars($expense['category']) ?></td>
+                                    <td><?= htmlspecialchars($expense['description']) ?></td>
+                                    <td>₱<?= number_format($expense['amount'], 2) ?></td>
+                                    <td>
+                                        <span class="status-badge <?= strtolower($expense['status']) ?>">
+                                            <?= $expense['status'] ?>
+                                        </span>
+                                    </td>
                                     <td>
                                         <button class="btn btn-outline btn-sm edit-expense-btn" 
-                                                data-id="<?php echo $expense['id']; ?>"
-                                                data-date="<?php echo $expense['date']; ?>"
-                                                data-category="<?php echo htmlspecialchars($expense['category']); ?>"
-                                                data-description="<?php echo htmlspecialchars($expense['description']); ?>"
-                                                data-amount="<?php echo $expense['amount']; ?>"
-                                                data-status="<?php echo $expense['status']; ?>">
+                                                data-id="<?= $expense['id'] ?>"
+                                                data-date="<?= $expense['date'] ?>"
+                                                data-category="<?= htmlspecialchars($expense['category']) ?>"
+                                                data-description="<?= htmlspecialchars($expense['description']) ?>"
+                                                data-amount="<?= $expense['amount'] ?>"
+                                                data-status="<?= $expense['status'] ?>">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         <button class="btn btn-danger btn-sm delete-expense-btn" 
-                                                data-id="<?php echo $expense['id']; ?>"
-                                                data-description="<?php echo htmlspecialchars($expense['description']); ?>">
+                                                data-id="<?= $expense['id'] ?>"
+                                                data-description="<?= htmlspecialchars($expense['description']) ?>">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
@@ -658,71 +802,92 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             <!-- Income Tab -->
             <div class="fin-tabs-content" id="income">
                 <div class="summary-cards">
+                    <?php
+                    // Prepare income summary data dynamically
+                    $income_summary_data = [
+                        [
+                            'title' => 'Total Income',
+                            'icon' => 'fas fa-money-bill',
+                            'value' => $total_income,
+                            'change' => '18.3% from last month',
+                            'change_class' => 'positive'
+                        ],
+                        [
+                            'title' => 'Pending Receipts',
+                            'icon' => 'fas fa-clock',
+                            'value' => array_sum(array_map(function($income) { 
+                                return $income['status'] === 'Pending' ? $income['amount'] : 0; 
+                            }, $income)),
+                            'change' => count(array_filter($income, function($i) { return $i['status'] === 'Pending'; })) . ' payments pending',
+                            'change_class' => ''
+                        ],
+                        [
+                            'title' => 'Net Profit',
+                            'icon' => 'fas fa-chart-line',
+                            'value' => $total_income - $total_expenses,
+                            'change' => ($total_income > $total_expenses ? 'Positive growth' : 'Negative growth'),
+                            'change_class' => ($total_income > $total_expenses ? 'positive' : 'negative')
+                        ]
+                    ];
+                    ?>
+
+                    <?php foreach ($income_summary_data as $card): ?>
                     <div class="summary-card">
                         <div class="summary-card-header">
-                            <div class="summary-card-title">Total Income</div>
-                            <div class="summary-card-icon income">
-                                <i class="fas fa-arrow-up"></i>
-                            </div>
+                            <div class="summary-card-title"><?= $card['title'] ?></div>
+                            <div class="summary-card-icon"><i class="<?= $card['icon'] ?>"></i></div>
                         </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_income, 2); ?></div>
-                        <div class="summary-card-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>18.3% from last month</span>
+                        <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
+                        <div class="summary-card-change <?= $card['change_class'] ?>">
+                            <?php if (!empty($card['change_class'])): ?>
+                                <i class="fas fa-arrow-<?= $card['change_class'] === 'positive' ? 'up' : 'down' ?>"></i>
+                            <?php endif; ?>
+                            <span><?= $card['change'] ?></span>
                         </div>
                     </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Pending Receipts</div>
-                            <div class="summary-card-icon income">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($income) { return $income['status'] === 'Pending' ? $income['amount'] : 0; }, $income)), 2); ?></div>
-                        <div class="summary-card-change">2 payments pending</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Net Profit</div>
-                            <div class="summary-card-icon income">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_income - $total_expenses, 2); ?></div>
-                        <div class="summary-card-change positive">Positive growth</div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
+                <!-- Income Records Table -->
                 <div class="finance-table">
-                    <div class="finance-table-header">
+                    <div class="finance-table-header modern-header">
                         <div class="finance-table-title">Income Records</div>
                         <div class="finance-table-actions">
                             <div class="filter-group">
-                                <select class="form-input filter-select" id="incomeSourceFilter">
+                                <input type="text" class="filter-input" id="incomeSearchFilter" placeholder="🔍 Search income...">
+
+                                <select class="filter-input" id="incomeSourceFilter">
                                     <option value="">All Sources</option>
-                                    <option value="Product Sales">Product Sales</option>
-                                    <option value="Service Revenue">Service Revenue</option>
+                                    <?php
+                                    // Get unique income sources
+                                    $sources = array_unique(array_column($income, 'source'));
+                                    foreach ($sources as $source): ?>
+                                        <option value="<?= htmlspecialchars($source) ?>"><?= htmlspecialchars($source) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
-                                <select class="form-input filter-select" id="incomeStatusFilter">
+
+                                <select class="filter-input" id="incomeStatusFilter">
                                     <option value="">All Status</option>
                                     <option value="Received">Received</option>
                                     <option value="Pending">Pending</option>
                                 </select>
-                                <button class="btn btn-outline" id="clearIncomeFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
+
+                                <button class="btn-clear" id="clearIncomeFilters">
+                                    <i class="fas fa-times-circle"></i> Clear
+                                </button>
+
+                                <button class="btn btn-primary" id="addIncomeBtn">
+                                    <i class="fas fa-plus"></i> Add Income
                                 </button>
                             </div>
-                            <button class="btn btn-primary" id="addIncomeBtn">
-                                <i class="fas fa-plus"></i>
-                                <span>Add Income</span>
-                            </button>
                         </div>
                     </div>
+
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Date</th>
                                     <th>Source</th>
                                     <th>Description</th>
@@ -732,26 +897,40 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php
+                                // Sort income by date (newest first) and then by ID (newest first)
+                                usort($income, function($a, $b) {
+                                    $dateCompare = strtotime($b['date']) - strtotime($a['date']);
+                                    if ($dateCompare !== 0) return $dateCompare;
+                                    return $b['id'] - $a['id'];
+                                });
+                                ?>
+
                                 <?php foreach ($income as $income_item): ?>
-                                <tr>
-                                    <td><?php echo date('M d, Y', strtotime($income_item['date'])); ?></td>
-                                    <td><?php echo htmlspecialchars($income_item['source']); ?></td>
-                                    <td><?php echo htmlspecialchars($income_item['description']); ?></td>
-                                    <td>₱<?php echo number_format($income_item['amount'], 2); ?></td>
-                                    <td><span class="status-badge <?php echo strtolower($income_item['status']); ?>"><?php echo $income_item['status']; ?></span></td>
+                                <tr data-income-id="<?= $income_item['id'] ?>">
+                                    <td><?= $income_item['id'] ?></td>
+                                    <td><?= date('M d, Y', strtotime($income_item['date'])) ?></td>
+                                    <td><?= htmlspecialchars($income_item['source']) ?></td>
+                                    <td><?= htmlspecialchars($income_item['description']) ?></td>
+                                    <td>₱<?= number_format($income_item['amount'], 2) ?></td>
+                                    <td>
+                                        <span class="status-badge <?= strtolower($income_item['status']) ?>">
+                                            <?= $income_item['status'] ?>
+                                        </span>
+                                    </td>
                                     <td>
                                         <button class="btn btn-outline btn-sm edit-income-btn" 
-                                                data-id="<?php echo $income_item['id']; ?>"
-                                                data-date="<?php echo $income_item['date']; ?>"
-                                                data-source="<?php echo htmlspecialchars($income_item['source']); ?>"
-                                                data-description="<?php echo htmlspecialchars($income_item['description']); ?>"
-                                                data-amount="<?php echo $income_item['amount']; ?>"
-                                                data-status="<?php echo $income_item['status']; ?>">
+                                                data-id="<?= $income_item['id'] ?>"
+                                                data-date="<?= $income_item['date'] ?>"
+                                                data-source="<?= htmlspecialchars($income_item['source']) ?>"
+                                                data-description="<?= htmlspecialchars($income_item['description']) ?>"
+                                                data-amount="<?= $income_item['amount'] ?>"
+                                                data-status="<?= $income_item['status'] ?>">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         <button class="btn btn-danger btn-sm delete-income-btn" 
-                                                data-id="<?php echo $income_item['id']; ?>"
-                                                data-description="<?php echo htmlspecialchars($income_item['description']); ?>">
+                                                data-id="<?= $income_item['id'] ?>"
+                                                data-description="<?= htmlspecialchars($income_item['description']) ?>">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
@@ -971,193 +1150,248 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
 
             <!-- Invoice Tab -->
             <div class="fin-tabs-content" id="invoice">
-                            <div class="summary-cards">
-                                <div class="summary-card">
-                                    <div class="summary-card-header">
-                                        <div class="summary-card-title">Total Invoices</div>
-                                        <div class="summary-card-icon invoices">
-                                            <i class="fas fa-file-invoice"></i>
-                                        </div>
-                                    </div>
-                                    <div class="summary-card-value">₱<?php echo number_format($total_invoices, 2); ?></div>
-                                    <div class="summary-card-change">5 invoices generated</div>
-                                </div>
-                                <div class="summary-card">
-                                    <div class="summary-card-header">
-                                        <div class="summary-card-title">Paid Invoices</div>
-                                        <div class="summary-card-icon invoices">
-                                            <i class="fas fa-check-circle"></i>
-                                        </div>
-                                    </div>
-                                    <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($invoice) { return $invoice['status'] === 'Paid' ? $invoice['amount'] : 0; }, $invoices)), 2); ?></div>
-                                    <div class="summary-card-change positive">1 invoice paid</div>
-                                </div>
-                                <div class="summary-card">
-                                    <div class="summary-card-header">
-                                        <div class="summary-card-title">Overdue Amount</div>
-                                        <div class="summary-card-icon invoices">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                    </div>
-                                    <div class="summary-card-value">₱<?php echo number_format(array_sum(array_map(function($invoice) { return $invoice['status'] === 'Overdue' ? $invoice['amount'] : 0; }, $invoices)), 2); ?></div>
-                                    <div class="summary-card-change negative">1 invoice overdue</div>
-                                </div>
-                            </div>
+                <div class="summary-cards">
+                    <?php
+                    // Prepare invoice summary data dynamically
+                    $invoice_summary_data = [
+                        [
+                            'title' => 'Total Invoices',
+                            'icon' => 'fas fa-file-invoice',
+                            'value' => $total_invoices,
+                            'change' => count($invoices) . ' invoices generated',
+                            'change_class' => ''
+                        ],
+                        [
+                            'title' => 'Paid Invoices',
+                            'icon' => 'fas fa-check-circle',
+                            'value' => array_sum(array_map(function($invoice) { 
+                                return $invoice['status'] === 'Paid' ? $invoice['amount'] : 0; 
+                            }, $invoices)),
+                            'change' => count(array_filter($invoices, function($i) { return $i['status'] === 'Paid'; })) . ' paid',
+                            'change_class' => 'positive'
+                        ],
+                        [
+                            'title' => 'Overdue Amount',
+                            'icon' => 'fas fa-exclamation-triangle',
+                            'value' => array_sum(array_map(function($invoice) { 
+                                return $invoice['status'] === 'Overdue' ? $invoice['amount'] : 0; 
+                            }, $invoices)),
+                            'change' => count(array_filter($invoices, function($i) { return $i['status'] === 'Overdue'; })) . ' overdue',
+                            'change_class' => 'negative'
+                        ]
+                    ];
+                    ?>
 
-                            <div class="finance-table">
-                                <div class="finance-table-header">
-                                    <div class="finance-table-title">Invoice Management</div>
-                                    <div class="finance-table-actions">
-                                        <div class="filter-group">
-                                            <select class="form-input filter-select" id="invoiceStatusFilter">
-                                                <option value="">All Status</option>
-                                                <option value="Paid">Paid</option>
-                                                <option value="Pending">Pending</option>
-                                                <option value="Overdue">Overdue</option>
-                                                <option value="Draft">Draft</option>
-                                            </select>
-                                            <select class="form-input filter-select" id="invoiceClientFilter">
-                                                <option value="">All Clients</option>
-                                                <option value="ABC Manufacturing">ABC Manufacturing</option>
-                                                <option value="XYZ Industries">XYZ Industries</option>
-                                                <option value="Tech Solutions">Tech Solutions</option>
-                                                <option value="Global Corp">Global Corp</option>
-                                                <option value="Local Business">Local Business</option>
-                                            </select>
-                                            <button class="btn btn-outline" id="clearInvoiceFilters">
-                                                <i class="fas fa-times"></i>
-                                                <span>Clear</span>
-                                            </button>
-                                        </div>
-                                        <button class="btn btn-primary" id="addInvoiceBtn">
-                                            <i class="fas fa-plus"></i>
-                                            <span>Create Invoice</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="table-responsive">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Invoice #</th>
-                                                <th>Client</th>
-                                                <th>Amount</th>
-                                                <th>Due Date</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($invoices as $invoice): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($invoice['invoice_no']); ?></td>
-                                                <td><?php echo htmlspecialchars($invoice['client']); ?></td>
-                                                <td>₱<?php echo number_format($invoice['amount'], 2); ?></td>
-                                                <td><?php echo date('M d, Y', strtotime($invoice['due_date'])); ?></td>
-                                                <td><span class="status-badge <?php echo strtolower($invoice['status']); ?>"><?php echo $invoice['status']; ?></span></td>
-                                                <td>
-                                                    <button class="btn btn-outline btn-sm view-invoice-btn" 
-                                                            data-id="<?php echo $invoice['id']; ?>"
-                                                            data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>"
-                                                            data-client="<?php echo htmlspecialchars($invoice['client']); ?>"
-                                                            data-amount="<?php echo $invoice['amount']; ?>"
-                                                            data-due="<?php echo $invoice['due_date']; ?>"
-                                                            data-status="<?php echo $invoice['status']; ?>">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline btn-sm edit-invoice-btn" 
-                                                            data-id="<?php echo $invoice['id']; ?>"
-                                                            data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>"
-                                                            data-client="<?php echo htmlspecialchars($invoice['client']); ?>"
-                                                            data-amount="<?php echo $invoice['amount']; ?>"
-                                                            data-due="<?php echo $invoice['due_date']; ?>"
-                                                            data-status="<?php echo $invoice['status']; ?>">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger btn-sm delete-invoice-btn" 
-                                                            data-id="<?php echo $invoice['id']; ?>"
-                                                            data-invoice="<?php echo htmlspecialchars($invoice['invoice_no']); ?>">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
+                    <?php foreach ($invoice_summary_data as $card): ?>
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-card-title"><?= $card['title'] ?></div>
+                            <div class="summary-card-icon"><i class="<?= $card['icon'] ?>"></i></div>
+                        </div>
+                        <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
+                        <div class="summary-card-change <?= $card['change_class'] ?>">
+                            <?php if (!empty($card['change_class'])): ?>
+                                <i class="fas fa-arrow-<?= $card['change_class'] === 'positive' ? 'up' : 'down' ?>"></i>
+                            <?php endif; ?>
+                            <span><?= $card['change'] ?></span>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Invoice Management Table -->
+                <div class="finance-table">
+                    <div class="finance-table-header modern-header">
+                        <div class="finance-table-title">Invoice Management</div>
+                        <div class="finance-table-actions">
+                            <div class="filter-group">
+                                <input type="text" class="filter-input" id="invoiceSearchFilter" placeholder="🔍 Search invoices...">
+
+                                <select class="filter-input" id="invoiceStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Overdue">Overdue</option>
+                                    <option value="Draft">Draft</option>
+                                </select>
+
+                                <select class="filter-input" id="invoiceClientFilter">
+                                    <option value="">All Clients</option>
+                                    <?php
+                                    // Get unique clients
+                                    $clients = array_unique(array_column($invoices, 'client'));
+                                    foreach ($clients as $client): ?>
+                                        <option value="<?= htmlspecialchars($client) ?>"><?= htmlspecialchars($client) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <button class="btn-clear" id="clearInvoiceFilters">
+                                    <i class="fas fa-times-circle"></i> Clear
+                                </button>
+
+                                <button class="btn btn-primary" id="addInvoiceBtn">
+                                    <i class="fas fa-plus"></i> Create Invoice
+                                </button>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Client</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                // Sort invoices by creation date (newest first) to show recent invoices first
+                                usort($invoices, function($a, $b) {
+                                    return strtotime($b['created_at']) - strtotime($a['created_at']);
+                                });
+                                
+                                // Counter for sequential invoice numbers
+                                $invoice_counter = 1;
+                                ?>
+
+                                <?php foreach ($invoices as $invoice): ?>
+                                <?php
+                                // For existing invoices, use their creation year
+                                // For new invoices, use current year
+                                $invoice_year = isset($invoice['created_at']) ? date('Y', strtotime($invoice['created_at'])) : date('Y');
+                                $invoice_number = sprintf('INV-%s-%04d', $invoice_year, $invoice_counter++);
+                                ?>
+                                <tr data-invoice-id="<?= $invoice['id'] ?>">
+                                    <td><?= sprintf('INV-%s-%04d', date('Y'), $invoice_counter++) ?></td>
+                                    <td><?= htmlspecialchars($invoice['client']) ?></td>
+                                    <td>₱<?= number_format($invoice['amount'], 2) ?></td>
+                                    <td><?= date('M d, Y', strtotime($invoice['due_date'])) ?></td>
+                                    <td>
+                                        <span class="status-badge <?= strtolower($invoice['status']) ?>">
+                                            <?= $invoice['status'] ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-outline btn-sm view-invoice-btn" 
+                                                data-id="<?= $invoice['id'] ?>"
+                                                data-invoice="<?= htmlspecialchars($invoice_number) ?>"
+                                                data-client="<?= htmlspecialchars($invoice['client']) ?>"
+                                                data-amount="<?= $invoice['amount'] ?>"
+                                                data-due="<?= $invoice['due_date'] ?>"
+                                                data-status="<?= $invoice['status'] ?>">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm edit-invoice-btn" 
+                                                data-id="<?= $invoice['id'] ?>"
+                                                data-invoice="<?= htmlspecialchars($invoice_number) ?>"
+                                                data-client="<?= htmlspecialchars($invoice['client']) ?>"
+                                                data-amount="<?= $invoice['amount'] ?>"
+                                                data-due="<?= $invoice['due_date'] ?>"
+                                                data-status="<?= $invoice['status'] ?>">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-sm delete-invoice-btn" 
+                                                data-id="<?= $invoice['id'] ?>"
+                                                data-invoice="<?= htmlspecialchars($invoice_number) ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
             <!-- Budgeting Tab -->
             <div class="fin-tabs-content" id="budgeting">
                 <div class="summary-cards">
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Total Budget</div>
-                            <div class="summary-card-icon budget">
-                                <i class="fas fa-chart-pie"></i>
+                    <?php
+                    // Prepare the data array dynamically
+                    $budget_summary_data = [
+                        [
+                            'title' => 'Total Budget',
+                            'icon' => 'fas fa-chart-pie',
+                            'value' => $total_budget_allocated,
+                            'change' => 'Budget allocated',
+                            'change_class' => ''
+                        ],
+                        [
+                            'title' => 'Spent',
+                            'icon' => 'fas fa-spending',
+                            'value' => $total_budget_spent,
+                            'change' => round(($total_budget_spent / $total_budget_allocated) * 100, 1) . '% used',
+                            'change_class' => ''
+                        ],
+                        [
+                            'title' => 'Remaining',
+                            'icon' => 'fas fa-wallet',
+                            'value' => $total_budget_allocated - $total_budget_spent,
+                            'change' => 'Available budget',
+                            'change_class' => 'positive'
+                        ]
+                    ];
+                    ?>
+
+                    <?php foreach ($budget_summary_data as $card): ?>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <div class="summary-card-title"><?= $card['title'] ?></div>
+                                <div class="summary-card-icon"><i class="<?= $card['icon'] ?>"></i></div>
+                            </div>
+                            <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
+                            <div class="summary-card-change <?= $card['change_class'] ?>">
+                                <?php if (!empty($card['change_class'])): ?>
+                                    <i class="fas fa-arrow-up"></i>
+                                <?php endif; ?>
+                                <span><?= $card['change'] ?></span>
                             </div>
                         </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_budget_allocated, 2); ?></div>
-                        <div class="summary-card-change">Budget allocated</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Spent</div>
-                            <div class="summary-card-icon budget">
-                                <i class="fas fa-spending"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_budget_spent, 2); ?></div>
-                        <div class="summary-card-change"><?php echo round(($total_budget_spent / $total_budget_allocated) * 100, 1); ?>% used</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-card-header">
-                            <div class="summary-card-title">Remaining</div>
-                            <div class="summary-card-icon budget">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                        </div>
-                        <div class="summary-card-value">₱<?php echo number_format($total_budget_allocated - $total_budget_spent, 2); ?></div>
-                        <div class="summary-card-change positive">Available budget</div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
+                <!-- Budget Overview Table -->
                 <div class="finance-table">
-                    <div class="finance-table-header">
+                    <div class="finance-table-header modern-header">
                         <div class="finance-table-title">Budget Overview</div>
                         <div class="finance-table-actions">
                             <div class="filter-group">
-                                <select class="form-input filter-select" id="budgetCategoryFilter">
+                                <select class="filter-input" id="budgetCategoryFilter">
                                     <option value="">All Categories</option>
                                     <option value="Raw Materials">Raw Materials</option>
                                     <option value="Equipment">Equipment</option>
                                     <option value="Utilities">Utilities</option>
                                     <option value="Logistics">Logistics</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Marketing">Marketing</option>
                                 </select>
-                                <select class="form-input filter-select" id="budgetProgressFilter">
+
+                                <select class="filter-input" id="budgetProgressFilter">
                                     <option value="">All Progress</option>
                                     <option value="safe">Under 50%</option>
                                     <option value="warning">50-80%</option>
                                     <option value="danger">Over 80%</option>
                                 </select>
-                                <button class="btn btn-outline" id="clearBudgetFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
+
+                                <button class="btn-clear" id="clearBudgetFilters">
+                                    <i class="fas fa-times-circle"></i> Clear
+                                </button>
+
+                                <button class="btn btn-outline" id="exportBudgetBtn">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+
+                                <button class="btn btn-primary" id="addBudgetBtn">
+                                    <i class="fas fa-plus"></i> Add Budget
                                 </button>
                             </div>
-                            <button class="btn btn-outline" id="exportBudgetBtn">
-                                <i class="fas fa-download"></i>
-                                <span>Export</span>
-                            </button>
-                            <button class="btn btn-primary" id="addBudgetBtn">
-                                <i class="fas fa-plus"></i>
-                                <span>Add Budget</span>
-                            </button>
                         </div>
                     </div>
+
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -1171,34 +1405,41 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php
+                                // Sort budget by category (ascending)
+                                usort($budget, function($a, $b) {
+                                    return strcmp($a['category'], $b['category']);
+                                });
+                                ?>
+
                                 <?php foreach ($budget as $budget_item): ?>
                                 <?php 
                                 $percentage = ($budget_item['spent'] / $budget_item['allocated']) * 100;
                                 $progress_class = $percentage < 50 ? 'safe' : ($percentage < 80 ? 'warning' : 'danger');
                                 ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($budget_item['category']); ?></td>
-                                    <td>₱<?php echo number_format($budget_item['allocated'], 2); ?></td>
-                                    <td>₱<?php echo number_format($budget_item['spent'], 2); ?></td>
-                                    <td>₱<?php echo number_format($budget_item['remaining'], 2); ?></td>
+                                <tr data-budget-id="<?= $budget_item['id'] ?>">
+                                    <td><?= htmlspecialchars($budget_item['category']) ?></td>
+                                    <td>₱<?= number_format($budget_item['allocated'], 2) ?></td>
+                                    <td>₱<?= number_format($budget_item['spent'], 2) ?></td>
+                                    <td>₱<?= number_format($budget_item['remaining'], 2) ?></td>
                                     <td>
                                         <div class="budget-progress">
-                                            <div class="budget-progress-bar <?php echo $progress_class; ?>" style="width: <?php echo $percentage; ?>%"></div>
+                                            <div class="budget-progress-bar <?= $progress_class ?>" style="width: <?= $percentage ?>%"></div>
                                         </div>
-                                        <small><?php echo round($percentage, 1); ?>%</small>
+                                        <small><?= round($percentage, 1) ?>%</small>
                                     </td>
                                     <td>
                                         <button class="btn btn-outline btn-sm edit-budget-btn" 
-                                                data-id="<?php echo $budget_item['id']; ?>"
-                                                data-category="<?php echo htmlspecialchars($budget_item['category']); ?>"
-                                                data-allocated="<?php echo $budget_item['allocated']; ?>"
-                                                data-spent="<?php echo $budget_item['spent']; ?>">
+                                                data-id="<?= $budget_item['id'] ?>"
+                                                data-category="<?= htmlspecialchars($budget_item['category']) ?>"
+                                                data-allocated="<?= $budget_item['allocated'] ?>"
+                                                data-spent="<?= $budget_item['spent'] ?>">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         <button class="btn btn-outline btn-sm view-budget-chart-btn" 
-                                                data-category="<?php echo htmlspecialchars($budget_item['category']); ?>"
-                                                data-allocated="<?php echo $budget_item['allocated']; ?>"
-                                                data-spent="<?php echo $budget_item['spent']; ?>">
+                                                data-category="<?= htmlspecialchars($budget_item['category']) ?>"
+                                                data-allocated="<?= $budget_item['allocated'] ?>"
+                                                data-spent="<?= $budget_item['spent'] ?>">
                                             <i class="fas fa-chart-bar"></i>
                                         </button>
                                     </td>
@@ -1233,7 +1474,8 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                         <select id="expenseCategory" name="category" class="form-input" required>
                             <option value="">Select Category</option>
                             <option value="Production Costs">Production Costs</option>
-                            <option value="Packaging & Logistics">Packaging & Logistics</option>                                <option value="Operating & Administrative">Operating & Administrative</option>
+                            <option value="Packaging & Logistics">Packaging & Logistics</option>                                
+                            <option value="Operating & Administrative">Operating & Administrative</option>
                             <option value="Sales & Marketing">Sales & Marketing</option>
                             <option value="Financial Expenses">Financial Expenses</option>
                             <option value="R&D / Quality Control">R&D / Quality Control</option>
@@ -1354,36 +1596,33 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 <input type="hidden" id="invoiceId" name="id">
                 <input type="hidden" name="action" id="invoiceAction" value="add_invoice">
                 
+                <!-- Removed Invoice Number field (will be auto-generated server-side) -->
+                
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="invoiceNumber" class="form-label">Invoice Number</label>
-                        <input type="text" id="invoiceNumber" name="invoice_no" class="form-input" required>
-                    </div>
                     <div class="form-group">
                         <label for="invoiceClient" class="form-label">Client</label>
                         <input type="text" id="invoiceClient" name="client" class="form-input" required>
                     </div>
-                </div>
-                
-                <div class="form-row">
                     <div class="form-group">
                         <label for="invoiceAmount" class="form-label">Amount (₱)</label>
                         <input type="number" id="invoiceAmount" name="amount" class="form-input" step="0.01" min="0" required>
                     </div>
+                </div>
+                
+                <div class="form-row">
                     <div class="form-group">
                         <label for="invoiceDueDate" class="form-label">Due Date</label>
                         <input type="date" id="invoiceDueDate" name="due_date" class="form-input" required>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="invoiceStatus" class="form-label">Status</label>
-                    <select id="invoiceStatus" name="status" class="form-input" required>
-                        <option value="Draft">Draft</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Overdue">Overdue</option>
-                    </select>
+                    <div class="form-group">
+                        <label for="invoiceStatus" class="form-label">Status</label>
+                        <select id="invoiceStatus" name="status" class="form-input" required>
+                            <option value="Draft" selected>Draft</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="form-actions">
@@ -1518,60 +1757,148 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
         </div>
     </div>
 
+    <!-- Income vs Expenses Chart Section -->
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('exinChart').getContext('2d');
-        let exinChart = new Chart(ctx, {
-            type: 'line',
+
+        // Create gradient backgrounds
+        const incomeGradient = ctx.createLinearGradient(0, 0, 0, 300);
+        incomeGradient.addColorStop(0, 'rgba(31, 216, 37, 0.8)');
+        incomeGradient.addColorStop(1, 'rgba(31, 216, 37, 0.2)');
+
+        const expensesGradient = ctx.createLinearGradient(0, 0, 0, 300);
+        expensesGradient.addColorStop(0, 'rgba(234, 44, 44, 0.8)');
+        expensesGradient.addColorStop(1, 'rgba(234, 44, 44, 0.2)');
+
+        // Chart config
+        let chart = new Chart(ctx, {
+            type: 'bar',
             data: {
-                labels: ['January', 'February', 'March', 'April'],
+                labels: [],
                 datasets: [
                     {
                         label: 'Income',
-                        borderColor: 'green',
-                        data: [5000, 6000, 7000, 8000],
-                        fill: false
+                        data: [],
+                        backgroundColor: incomeGradient,
+                        borderRadius: 8
                     },
                     {
                         label: 'Expenses',
-                        borderColor: 'red',
-                        data: [4000, 4500, 5000, 5500],
-                        fill: false
+                        data: [],
+                        backgroundColor: expensesGradient,
+                        borderRadius: 8
                     }
-                    ]
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#333',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 13 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { size: 13 } }
+                    }
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        function updateChart(range) {
+            fetch(`get_chart_data.php?range=${range}`)
+                .then(res => res.json())
+                .then(data => {
+                    chart.data.labels = data.labels;
+                    chart.data.datasets[0].data = data.income;
+                    chart.data.datasets[1].data = data.expenses;
+                    chart.update();
+                })
+                .catch(err => console.error(err));
+
+            fetch(`get_accounts_payable.php?range=${range}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (document.getElementById('accountsPayableAmount')) {
+                        document.getElementById('accountsPayableAmount').textContent =
+                            `₱${Number(data.amount).toLocaleString()}`;
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        document.querySelectorAll(".chart-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                document.querySelectorAll(".chart-btn").forEach(b => b.classList.remove("active"));
+                this.classList.add("active");
+                updateChart(this.getAttribute("data-range"));
+            });
+        });
+
+        updateChart('weekly');
+    });
+    </script>
+
+    <!-- Accounts Payable Section -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+    fetch('accounts_payable.php?range=monthly')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('exinChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Accounts Payable',
+                        data: data.amounts,
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: {
+                            display: true,
+                            text: 'Outstanding Supplier Invoices'
                         }
                     }
                 }
-                });
-
-                function updateChart(period) {
-                    let labels, incomeData, expensesData;
-                    if (period === 'monthly') {
-                        labels = ['January', 'February', 'March', 'April'];
-                        incomeData = [5000, 6000, 7000, 8000];
-                        expensesData = [4000, 4500, 5000, 5500];
-                    } else if (period === 'quarterly') {
-                        labels = ['Q1', 'Q2', 'Q3', 'Q4'];
-                        incomeData = [18000, 20000, 22000, 24000];
-                        expensesData = [13500, 15000, 16500, 18000];
-                    } else if (period === 'yearly') {
-                        labels = ['2020', '2021', '2022', '2023'];
-                        incomeData = [70000, 75000, 80000, 85000];
-                        expensesData = [55000, 60000, 65000, 70000];
-                    }
-
-                    exinChart.data.labels = labels;
-                    exinChart.data.datasets[0].data = incomeData;
-                    exinChart.data.datasets[1].data = expensesData;
-                    exinChart.update();
-                }
+            });
+        });
+    });
     </script>
-
 
     <script src="assets/js/script.js"></script>
     <script>
@@ -1698,6 +2025,89 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
 
             // ===== FILTER FUNCTIONALITY =====
 
+            // Transaction Filters
+            const transactionSearchFilter = document.getElementById('transactionSearchFilter');
+            const transactionTypeFilter = document.getElementById('transactionTypeFilter');
+            const transactionStatusFilter = document.getElementById('transactionStatusFilter');
+            const clearTransactionFilter = document.getElementById('clearTransactionFilter');
+
+            // Correct selector for your table's tbody
+            const transactionTable = document.querySelector('.finance-table table tbody');
+
+            function filterTransaction() {
+                if (!transactionTable) return;
+
+                const searchTerm = transactionSearchFilter?.value.trim().toLowerCase() || '';
+                const selectedType = transactionTypeFilter?.value.trim().toLowerCase() || '';
+                const selectedStatus = transactionStatusFilter?.value.trim().toLowerCase() || '';
+
+                const rows = transactionTable.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    const date = row.cells[0]?.textContent.trim().toLowerCase() || '';
+                    const source = row.cells[1]?.textContent.trim().toLowerCase() || '';
+                    const description = row.cells[2]?.textContent.trim().toLowerCase() || '';
+                    const amount = row.cells[3]?.textContent.trim().toLowerCase() || '';
+                    const transType = row.cells[4]?.textContent.trim().toLowerCase() || '';   // ✅ Type = index 4
+                    const transStatus = row.cells[5]?.textContent.trim().toLowerCase() || ''; // ✅ Status = index 5
+
+                    // Search match: checks all visible text
+                    const searchMatch =
+                        !searchTerm ||
+                        date.includes(searchTerm) ||
+                        source.includes(searchTerm) ||
+                        description.includes(searchTerm) ||
+                        amount.includes(searchTerm) ||
+                        transType.includes(searchTerm) ||
+                        transStatus.includes(searchTerm);
+
+                    // Dropdown matches
+                    const typeMatch = !selectedType || transType === selectedType;
+                    const statusMatch = !selectedStatus || transStatus === selectedStatus;
+
+                    // Show/hide row
+                    row.style.display = (searchMatch && typeMatch && statusMatch) ? '' : 'none';
+                });
+
+                updateTransactionSummary();
+            }
+
+            function updateTransactionSummary() {
+                if (!transactionTable) return;
+
+                const visibleRows = transactionTable.querySelectorAll('tr:not([style*="display: none"])');
+                let totalAmount = 0;
+                let pendingAmount = 0;
+
+                visibleRows.forEach(row => {
+                    const amountText = row.cells[3]?.textContent || '0';
+                    const amount = parseFloat(amountText.replace('₱', '').replace(/,/g, '')) || 0;
+                    const status = row.cells[5]?.textContent.trim().toLowerCase() || '';
+
+                    totalAmount += amount;
+                    if (status === 'pending') {
+                        pendingAmount += amount;
+                    }
+                });
+
+                console.log(`Filtered Transaction: Total ₱${totalAmount.toFixed(2)}, Pending ₱${pendingAmount.toFixed(2)}`);
+            }
+
+            // ✅ Event listeners
+            transactionSearchFilter?.addEventListener('input', filterTransaction);
+            transactionTypeFilter?.addEventListener('change', filterTransaction);
+            transactionStatusFilter?.addEventListener('change', filterTransaction);
+
+            clearTransactionFilter?.addEventListener('click', function () {
+                if (transactionSearchFilter) transactionSearchFilter.value = '';
+                if (transactionTypeFilter) transactionTypeFilter.value = '';
+                if (transactionStatusFilter) transactionStatusFilter.value = '';
+                filterTransaction();
+                if (typeof showNotification === 'function') {
+                    showNotification('Filters cleared', 'success');
+                }
+            });
+
             // Expense Filters
             const expenseCategoryFilter = document.getElementById('expenseCategoryFilter');
             const expenseStatusFilter = document.getElementById('expenseStatusFilter');
@@ -1706,9 +2116,12 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             const expenseTable = document.querySelector('#expenses .finance-table tbody');
 
             function filterExpenses() {
-                const categoryFilter = expenseCategoryFilter.value;
-                const statusFilter = expenseStatusFilter.value;
-                const searchFilter = expenseSearchFilter.value.toLowerCase();
+                if (!expenseTable) return;
+
+                const categoryFilter = expenseCategoryFilter ? expenseCategoryFilter.value.trim() : '';
+                const statusFilter = expenseStatusFilter ? expenseStatusFilter.value.trim() : '';
+                const searchFilter = expenseSearchFilter ? expenseSearchFilter.value.trim().toLowerCase() : '';
+
                 const rows = expenseTable.querySelectorAll('tr');
 
                 let visibleCount = 0;
@@ -1716,11 +2129,14 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 let pendingAmount = 0;
 
                 rows.forEach(row => {
+                    // Make sure the row has enough cells before accessing
+                    if (row.cells.length < 5) return;
+
                     const category = row.cells[1].textContent.trim();
                     const description = row.cells[2].textContent.trim();
                     const status = row.cells[4].textContent.trim();
                     const amountText = row.cells[3].textContent.trim();
-                    const amount = parseFloat(amountText.replace('₱', '').replace(/,/g, ''));
+                    const amount = parseFloat(amountText.replace('₱', '').replace(/,/g, '')) || 0;
                     
                     const categoryMatch = !categoryFilter || category === categoryFilter;
                     const statusMatch = !statusFilter || status === statusFilter;
@@ -1733,7 +2149,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                         row.style.display = '';
                         visibleCount++;
                         totalAmount += amount;
-                        if (status === 'Pending') {
+                        if (status.toLowerCase() === 'pending') {
                             pendingAmount += amount;
                         }
                     } else {
@@ -1741,12 +2157,10 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                     }
                 });
 
-                // Update summary cards with filtered data
                 updateExpenseSummary(totalAmount, pendingAmount, visibleCount);
             }
 
             function updateExpenseSummary(totalAmount = 0, pendingAmount = 0, visibleCount = 0) {
-                // Update the summary cards with filtered data
                 const totalExpenseCard = document.querySelector('#expenses .summary-card:nth-child(1) .summary-card-value');
                 const pendingCard = document.querySelector('#expenses .summary-card:nth-child(2) .summary-card-value');
                 const monthlyCard = document.querySelector('#expenses .summary-card:nth-child(3) .summary-card-value');
@@ -1758,42 +2172,48 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                     pendingCard.textContent = `₱${pendingAmount.toFixed(2)}`;
                 }
                 if (monthlyCard) {
-                    // Calculate monthly average based on visible records
-                    const monthlyAverage = visibleCount > 0 ? totalAmount / visibleCount * 30 : 0;
+                    const monthlyAverage = visibleCount > 0 ? (totalAmount / visibleCount) * 30 : 0;
                     monthlyCard.textContent = `₱${monthlyAverage.toFixed(2)}`;
                 }
 
                 console.log(`Filtered: ${visibleCount} records, Total ₱${totalAmount.toFixed(2)}, Pending ₱${pendingAmount.toFixed(2)}`);
             }
 
+            // Attach filter events
             if (expenseCategoryFilter) {
-                expenseCategoryFilter.addEventListener('change', function() {
-                    console.log('Category filter changed:', this.value);
+                expenseCategoryFilter.addEventListener('change', () => {
+                    console.log('Category filter changed:', expenseCategoryFilter.value);
                     filterExpenses();
                 });
             }
             if (expenseStatusFilter) {
-                expenseStatusFilter.addEventListener('change', function() {
-                    console.log('Status filter changed:', this.value);
+                expenseStatusFilter.addEventListener('change', () => {
+                    console.log('Status filter changed:', expenseStatusFilter.value);
                     filterExpenses();
                 });
             }
             if (expenseSearchFilter) {
-                expenseSearchFilter.addEventListener('input', function() {
-                    console.log('Search filter changed:', this.value);
+                expenseSearchFilter.addEventListener('input', () => {
+                    console.log('Search filter changed:', expenseSearchFilter.value);
                     filterExpenses();
                 });
             }
             if (clearExpenseFilters) {
-                clearExpenseFilters.addEventListener('click', function() {
+                clearExpenseFilters.addEventListener('click', () => {
                     console.log('Clear filters clicked');
-                    expenseCategoryFilter.value = '';
-                    expenseStatusFilter.value = '';
-                    expenseSearchFilter.value = '';
+                    if (expenseCategoryFilter) expenseCategoryFilter.value = '';
+                    if (expenseStatusFilter) expenseStatusFilter.value = '';
+                    if (expenseSearchFilter) expenseSearchFilter.value = '';
                     filterExpenses();
-                    showNotification('Filters cleared', 'success');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Filters cleared', 'success');
+                    }
                 });
             }
+
+            // Run once on page load to show correct initial data
+            filterExpenses();
+
 
             // Income Filters
             const incomeSourceFilter = document.getElementById('incomeSourceFilter');
@@ -1841,9 +2261,11 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             if (incomeStatusFilter) incomeStatusFilter.addEventListener('change', filterIncome);
             if (clearIncomeFilters) {
                 clearIncomeFilters.addEventListener('click', function() {
+                    console.log('Clear filters clicked');
                     incomeSourceFilter.value = '';
                     incomeStatusFilter.value = '';
                     filterIncome();
+                    showNotification('Filters cleared', 'success');
                 });
             }
 
