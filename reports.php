@@ -388,22 +388,21 @@ $role = htmlspecialchars($_SESSION['role']);
                     <div class="report-results" id="historyReportResults">
                         <!-- History report content will be dynamically loaded here -->
                         <div id="historyFinanceSection" style="display:none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="margin: 0;">Finance Report</h3>
-            <div class="account-filters" style="display: flex; gap: 1rem; align-items: center;">
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                    <label style="color: #374151; font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 500;">Account Type:</label>
-                    <select id="accountTypeFilter" style="background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem; font-size: 0.875rem; color: #374151; min-width: 120px; cursor: pointer;">
-                        <option value="all">All Accounts</option>
-                        <option value="expenses">Expenses</option>
-                        <option value="income">Income</option>
-                        <option value="budget">Budget</option>
-                    </select>
-                </div>
-                <button onclick="testFilter()" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">Test Filter</button>
-                <button onclick="resetAllFilters()" style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">Reset All</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Finance Report</h3>
+        <div class="account-filters" style="display: flex; gap: 1rem; align-items: center;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <label style="color: #374151; font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 500;">Account Type:</label>
+                <select id="accountTypeFilter" style="background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem; font-size: 0.875rem; color: #374151; min-width: 120px; cursor: pointer;">
+                    <option value="all">All Accounts</option>
+                    <option value="expenses">Expenses</option>
+                    <option value="income">Income</option>
+                    <option value="budget">Budget</option>
+                </select>
             </div>
+            <!-- Removed Test Filter and Reset All buttons -->
         </div>
+    </div>
         
         <?php
         // Collect all finance data from different tables
