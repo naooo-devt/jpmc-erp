@@ -285,7 +285,7 @@ $hr_functions = [
 
         .action-btn.delete {
             background: rgba(239, 68, 68, 0.1);
-            color: var,--error);
+            color: var(--error);
         }
 
         .action-btn.view:hover {
@@ -374,14 +374,6 @@ $hr_functions = [
             cursor: pointer;
             transition: background 0.2s;
             font-size: 1rem;
-            outline: none;
-        }
-
-        .category-btn:focus-visible {
-            outline: 2px solid var(--primary-blue);
-            outline-offset: 2px;
-            background: var(--primary-blue);
-            color: var(--white);
         }
 
         .category-btn.active {
@@ -481,7 +473,66 @@ $hr_functions = [
 
 <body>
     <!-- Sidebar Navigation -->
-      <?php include 'sidebar.php'; ?>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="company-logo">
+                <img src="images/logo.png" alt="Company Logo">
+            </div>
+            <div class="company-name">James Polymer</div>
+            <div class="company-subtitle">Manufacturing Corporation</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-section-title">Main Navigation</div>
+                <a href="index.php" class="menu-item" data-module="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="finances.php" class="menu-item" data-module="finances">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Finances</span>
+                </a>
+                <a href="human_resources.php" class="menu-item" data-module="human-resources">
+                    <i class="fas fa-users"></i>
+                    <span>Human Resources</span>
+                </a>
+                <div class="menu-item menu-dropdown" id="supplyChainDropdown">
+                    <i class="fas fa-link"></i>
+                    <span>Supply Chain</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="dropdown-menu" id="supplyChainDropdownMenu">
+                    <a href="supply_chain.php" class="menu-item" data-module="manufacturing">
+                        <i class="fas fa-industry"></i>
+                        <span>Manufacturing</span>
+                    </a>
+                    <a href="suppliers.php" class="menu-item" data-module="transactions">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transactions</span>
+                    </a>
+                </div>
+                <a href="transactions.php" class="menu-item" data-module="customer-service">
+                    <i class="fas fa-headset"></i>
+                    <span>Customer Service</span>
+                </a>
+                <a href="reports.php" class="menu-item" data-module="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-section-title">System</div>
+                <a href="finished_goods.php" class="menu-item active" data-module="system-admin">
+                    <i class="fas fa-cog"></i>
+                    <span>System Administration</span>
+                </a>
+                <a href="logout.php" class="menu-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content Area -->
     <div class="main-content">
@@ -502,130 +553,159 @@ $hr_functions = [
         </div>
         <div class="content">
             <div class="system-admin-container">
-                <div class="category-buttons" role="tablist" aria-label="System Administration Sections">
-                    <button class="category-btn active" id="btnCompanyProfile" role="tab" aria-selected="true" aria-controls="sectionCompanyProfile" tabindex="0">Company Profile</button>
-                    <button class="category-btn" id="btnCurrency" role="tab" aria-selected="false" aria-controls="sectionCurrency" tabindex="0">Currency Settings</button>
-                    <button class="category-btn" id="btnChartOfAccounts" role="tab" aria-selected="false" aria-controls="sectionChartOfAccounts" tabindex="0">Chart of Accounts</button>
-                    <button class="category-btn" id="btnPaymentTerms" role="tab" aria-selected="false" aria-controls="sectionPaymentTerms" tabindex="0">Payment Terms</button>
-                    <button class="category-btn" id="btnAccessLogs" role="tab" aria-selected="false" aria-controls="sectionAccessLogs" tabindex="0">Access Logs</button>
-                    <button class="category-btn" id="btnRetention" role="tab" aria-selected="false" aria-controls="sectionRetention" tabindex="0">Data Retention Policies</button>
-                    <button class="category-btn" id="btnBackup" role="tab" aria-selected="false" aria-controls="sectionBackup" tabindex="0">Backup & Restore</button>
-                    <button class="category-btn" id="btnNotifications" role="tab" aria-selected="false" aria-controls="sectionNotifications" tabindex="0">Notification Settings</button>
+                <div class="category-buttons">
+                    <button class="category-btn active" id="btnEmployee">Employee Management</button>
+                    <button class="category-btn" id="btnRecruitment">Recruitment Management</button>
+                    <button class="category-btn" id="btnHRFunctions">HR Functions</button>
+                    <button class="category-btn" id="btnActivityLog">Activity Log</button>
                 </div>
-                <!-- Company Profile Section -->
-                <div class="category-section active" id="sectionCompanyProfile">
+                <!-- Employee Management Section -->
+                <div class="category-section active" id="sectionEmployee">
                     <div class="system-admin-header">
-                        <div class="system-admin-title">Company Profile</div>
+                        <div class="system-admin-title">Employee Management</div>
                         <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="editCompanyBtn">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit Profile</span>
+                            <button class="btn btn-outline" id="exportBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
                             </button>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <tbody>
-                                    <?php
-                                    // Example: Fetch company profile from DB
-                                    $result = $conn->query("SELECT * FROM company_profile LIMIT 1");
-                                    $profile = $result ? $result->fetch_assoc() : null;
-                                    ?>
-                                    <tr><th>Company Name</th><td><?= $profile ? htmlspecialchars($profile['name']) : '' ?></td></tr>
-                                    <tr><th>Address</th><td><?= $profile ? htmlspecialchars($profile['address']) : '' ?></td></tr>
-                                    <tr><th>Tax ID</th><td><?= $profile ? htmlspecialchars($profile['tax_id']) : '' ?></td></tr>
-                                    <tr><th>Contact</th><td><?= $profile ? htmlspecialchars($profile['contact']) : '' ?></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- Currency Settings Section -->
-                <div class="category-section" id="sectionCurrency">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Currency Settings</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="editCurrencyBtn">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit Currency</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <tbody>
-                                    <?php
-                                    // Example: Fetch currency settings from DB
-                                    $result = $conn->query("SELECT * FROM currency_settings LIMIT 1");
-                                    $currency = $result ? $result->fetch_assoc() : null;
-                                    ?>
-                                    <tr><th>Default Currency</th><td><?= $currency ? htmlspecialchars($currency['default_currency']) : '' ?></td></tr>
-                                    <tr><th>Exchange Rate Source</th><td><?= $currency ? htmlspecialchars($currency['exchange_source']) : '' ?></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- Chart of Accounts Section -->
-                <div class="category-section" id="sectionChartOfAccounts">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Chart of Accounts Management</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="addAccountBtn">
+                            <button class="btn btn-primary" id="addEmployeeBtn">
                                 <i class="fas fa-plus"></i>
-                                <span>Add Account</span>
+                                <span>Add Employee</span>
                             </button>
                         </div>
                     </div>
+
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Search:</label>
+                                <input type="text" class="filter-input search-box" id="employeeSearch"
+                                    placeholder="Search employees...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Position:</label>
+                                <select class="filter-input" id="positionFilter">
+                                    <option value="">All Positions</option>
+                                    <option value="PROCESS ENGINEER">Process Engineer</option>
+                                    <option value="QA SUPERVISOR">QA Supervisor</option>
+                                    <option value="WAREHOUSEMAN">Warehouseman</option>
+                                    <option value="MOLD FABRICATOR">Mold Fabricator</option>
+                                    <option value="IT SUPERVISOR">IT Supervisor</option>
+                                    <option value="MACHINE OPERATOR">Machine Operator</option>
+                                    <option value="QUALITY CONTROL">Quality Control</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status:</label>
+                                <select class="filter-input" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-outline" id="clearFilters">
+                                    <i class="fas fa-times"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="table-container">
                         <div class="table-scroll-x">
                             <table class="employee-table">
                                 <thead>
                                     <tr>
-                                        <th>Account Code</th>
-                                        <th>Description</th>
-                                        <th>Type</th>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Position/Job Title</th>
+                                        <th>Department</th>
+                                        <th>Date Hired</th>
+                                        <th>Employment Type</th>
                                         <th>Status</th>
+                                        <th>Contact Number</th>
+                                        <th>Email Address</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    // Example: Fetch chart of accounts from DB
-                                    $result = $conn->query("SELECT * FROM chart_of_accounts");
-                                    if ($result) {
-                                        while ($row = $result->fetch_assoc()) {
-                                            echo '<tr>';
-                                            echo '<td>' . htmlspecialchars($row['account_code']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['description']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['type']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['status']) . '</td>';
-                                            echo '<td>
+                                    <?php foreach ($employees as $employee): ?>
+                                        <tr data-employee-id="<?php echo $employee['id']; ?>">
+                                            <td><span class="employee-id"><?php echo htmlspecialchars($employee['id']); ?></span></td>
+                                            <td><span class="employee-name"><?php echo htmlspecialchars($employee['name']); ?></span></td>
+                                            <td><span class="employee-position"><?php echo htmlspecialchars($employee['position']); ?></span></td>
+                                            <td><?php echo htmlspecialchars($employee['department']); ?></td>
+                                            <td><?php echo htmlspecialchars($employee['date_hired']); ?></td>
+                                            <td><?php echo htmlspecialchars($employee['employment_type']); ?></td>
+                                            <td>
+                                                <span class="employee-status <?php echo strtolower($employee['status']); ?>">
+                                                    <?php echo $employee['status']; ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($employee['contact']); ?></td>
+                                            <td><?php echo htmlspecialchars($employee['email']); ?></td>
+                                            <td>
                                                 <div class="employee-actions">
-                                                    <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
-                                                    <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                                                    <button class="action-btn view" data-id="<?php echo $employee['id']; ?>"
+                                                        title="View Profile">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $employee['id']; ?>"
+                                                        title="Edit Employee">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $employee['id']; ?>"
+                                                        data-name="<?php echo htmlspecialchars($employee['name']); ?>"
+                                                        title="Delete Employee">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </div>
-                                            </td>';
-                                            echo '</tr>';
-                                        }
-                                    }
-                                    ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <!-- Payment Terms Section -->
-                <div class="category-section" id="sectionPaymentTerms">
+                <!-- Recruitment Management Section -->
+                <div class="category-section" id="sectionRecruitment">
                     <div class="system-admin-header">
-                        <div class="system-admin-title">Payment Terms</div>
+                        <div class="system-admin-title">Recruitment Management</div>
                         <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="addPaymentTermBtn">
+                            <button class="btn btn-outline" id="exportRecruitmentBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
+                            </button>
+                            <button class="btn btn-primary" id="addApplicantBtn">
                                 <i class="fas fa-plus"></i>
-                                <span>Add Term</span>
+                                <span>Add Applicant</span>
                             </button>
+                        </div>
+                    </div>
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Search:</label>
+                                <input type="text" class="filter-input search-box" id="applicantSearch" placeholder="Search applicants...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status:</label>
+                                <select class="filter-input" id="applicantStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Screening">Screening</option>
+                                    <option value="Interview">Interview</option>
+                                    <option value="Hired">Hired</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-outline" id="clearApplicantFilters">
+                                    <i class="fas fa-times"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="table-container">
@@ -633,112 +713,92 @@ $hr_functions = [
                             <table class="employee-table">
                                 <thead>
                                     <tr>
-                                        <th>Term Name</th>
-                                        <th>Description</th>
-                                        <th>Days</th>
+                                        <th>Applicant ID</th>
+                                        <th>Full Name</th>
+                                        <th>Position Applied</th>
+                                        <th>Date Applied</th>
+                                        <th>Application Status</th>
+                                        <th>Contact Number</th>
+                                        <th>Email Address</th>
+                                        <th>Resume/CV</th>
+                                        <th>Assigned HR</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    // Example: Fetch payment terms from DB
-                                    $result = $conn->query("SELECT * FROM payment_terms");
-                                    if ($result) {
-                                        while ($row = $result->fetch_assoc()) {
-                                            echo '<tr>';
-                                            echo '<td>' . htmlspecialchars($row['term_name']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['description']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['days']) . '</td>';
-                                            echo '<td>
+                                    <?php foreach ($applicants as $applicant): ?>
+                                        <tr data-applicant-id="<?php echo $applicant['id']; ?>">
+                                            <td><?php echo htmlspecialchars($applicant['id']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['name']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['position_applied']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['date_applied']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['status']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['contact']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['email']); ?></td>
+                                            <td>
+                                                <a href="<?php echo $applicant['resume']; ?>" target="_blank" class="action-btn view" title="View Resume">
+                                                    <i class="fas fa-file"></i>
+                                                </a>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($applicant['assigned_hr']); ?></td>
+                                            <td>
                                                 <div class="employee-actions">
-                                                    <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
-                                                    <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                                                    <button class="action-btn view" data-id="<?php echo $applicant['id']; ?>" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Edit Applicant">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $applicant['id']; ?>" data-name="<?php echo htmlspecialchars($applicant['name']); ?>" title="Delete Applicant">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Update Status">
+                                                        <i class="fas fa-sync"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Schedule Interview">
+                                                        <i class="fas fa-calendar"></i>
+                                                    </button>
                                                 </div>
-                                            </td>';
-                                            echo '</tr>';
-                                        }
-                                    }
-                                    ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <!-- Access Logs Section -->
-                <div class="category-section" id="sectionAccessLogs">
+                <!-- HR Functions Section -->
+                <div class="category-section" id="sectionHRFunctions">
                     <div class="system-admin-header">
-                        <div class="system-admin-title">Access Logs</div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>User</th>
-                                        <th>IP Address</th>
-                                        <th>Action</th>
-                                        <th>Date/Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    // Example: Fetch access logs from DB
-                                    $result = $conn->query("SELECT * FROM access_logs ORDER BY datetime DESC LIMIT 100");
-                                    if ($result) {
-                                        while ($row = $result->fetch_assoc()) {
-                                            echo '<tr>';
-                                            echo '<td>' . htmlspecialchars($row['id']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['user']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['ip_address']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['action']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['datetime']) . '</td>';
-                                            echo '</tr>';
-                                        }
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- Data Retention Policies Section -->
-                <div class="category-section" id="sectionRetention">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Data Retention Policies</div>
+                        <div class="system-admin-title">HR Functions</div>
                         <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="editRetentionBtn">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit Policy</span>
+                            <button class="btn btn-outline" id="exportHRBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
                             </button>
                         </div>
                     </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <tbody>
-                                    <?php
-                                    // Example: Fetch retention policy from DB
-                                    $result = $conn->query("SELECT * FROM retention_policy LIMIT 1");
-                                    $policy = $result ? $result->fetch_assoc() : null;
-                                    ?>
-                                    <tr><th>Retention Period</th><td><?= $policy ? htmlspecialchars($policy['retention_period']) : '' ?></td></tr>
-                                    <tr><th>Backup Frequency</th><td><?= $policy ? htmlspecialchars($policy['backup_frequency']) : '' ?></td></tr>
-                                    <tr><th>Archive Location</th><td><?= $policy ? htmlspecialchars($policy['archive_location']) : '' ?></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- Backup & Restore Section -->
-                <div class="category-section" id="sectionBackup">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Backup & Restore</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="backupBtn">
-                                <i class="fas fa-database"></i>
-                                <span>Backup Now</span>
-                            </button>
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Search:</label>
+                                <input type="text" class="filter-input search-box" id="hrSearch" placeholder="Search HR functions...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status:</label>
+                                <select class="filter-input" id="hrStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Denied">Denied</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-outline" id="clearHRFilters">
+                                    <i class="fas fa-times"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="table-container">
@@ -746,58 +806,51 @@ $hr_functions = [
                             <table class="employee-table">
                                 <thead>
                                     <tr>
-                                        <th>Backup Date</th>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Leave Type</th>
+                                        <th>Date Filed</th>
+                                        <th>Leave Duration</th>
                                         <th>Status</th>
+                                        <th>Benefit Type</th>
+                                        <th>Benefit Start Date</th>
+                                        <th>Remarks</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    // Example: Fetch backup logs from DB
-                                    $result = $conn->query("SELECT * FROM backup_logs ORDER BY backup_date DESC LIMIT 20");
-                                    if ($result) {
-                                        while ($row = $result->fetch_assoc()) {
-                                            echo '<tr>';
-                                            echo '<td>' . htmlspecialchars($row['backup_date']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['status']) . '</td>';
-                                            echo '<td>
+                                    <?php foreach ($hr_functions as $hr): ?>
+                                        <tr data-employee-id="<?php echo $hr['employee_id']; ?>">
+                                            <td><?php echo htmlspecialchars($hr['employee_id']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['name']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['leave_type']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['date_filed']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['leave_duration']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['status']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['benefit_type']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['benefit_start']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['remarks']); ?></td>
+                                            <td>
                                                 <div class="employee-actions">
-                                                    <button class="action-btn view" title="Download"><i class="fas fa-download"></i></button>
-                                                    <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                                                    <button class="action-btn edit" data-id="<?php echo $hr['employee_id']; ?>" title="Edit HR Function">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $hr['employee_id']; ?>" data-name="<?php echo htmlspecialchars($hr['name']); ?>" title="Delete HR Function">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $hr['employee_id']; ?>" title="Approve">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $hr['employee_id']; ?>" title="Deny">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                    <button class="action-btn view" data-id="<?php echo $hr['employee_id']; ?>" title="View Request">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
                                                 </div>
-                                            </td>';
-                                            echo '</tr>';
-                                        }
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- Notification Settings Section -->
-                <div class="category-section" id="sectionNotifications">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Notification Settings</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-primary" id="editNotificationBtn">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit Notifications</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <tbody>
-                                    <?php
-                                    // Example: Fetch notification settings from DB
-                                    $result = $conn->query("SELECT * FROM notification_settings LIMIT 1");
-                                    $notif = $result ? $result->fetch_assoc() : null;
-                                    ?>
-                                    <tr><th>Email Alerts</th><td><?= $notif ? htmlspecialchars($notif['email_alerts']) : '' ?></td></tr>
-                                    <tr><th>SMS Alerts</th><td><?= $notif ? htmlspecialchars($notif['sms_alerts']) : '' ?></td></tr>
-                                    <tr><th>Overdue Payment Alerts</th><td><?= $notif ? htmlspecialchars($notif['overdue_alerts']) : '' ?></td></tr>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -829,6 +882,7 @@ $hr_functions = [
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- Example static row, replace with PHP fetching from DB -->
                                     <tr>
                                         <td>1</td>
                                         <td>101</td>
@@ -1019,35 +1073,23 @@ $hr_functions = [
             });
 
             // Category switching logic
-            const btnUserRole = document.getElementById('btnUserRole');
-            const btnOrgSettings = document.getElementById('btnOrgSettings');
-            const btnAccounting = document.getElementById('btnAccounting');
-            const btnMasterData = document.getElementById('btnMasterData');
-            const btnAudit = document.getElementById('btnAudit');
-            const btnUtilities = document.getElementById('btnUtilities');
+            const btnEmployee = document.getElementById('btnEmployee');
+            const btnRecruitment = document.getElementById('btnRecruitment');
+            const btnHRFunctions = document.getElementById('btnHRFunctions');
             const btnActivityLog = document.getElementById('btnActivityLog');
-            const sectionUserRole = document.getElementById('sectionUserRole');
-            const sectionOrgSettings = document.getElementById('sectionOrgSettings');
-            const sectionAccounting = document.getElementById('sectionAccounting');
-            const sectionMasterData = document.getElementById('sectionMasterData');
-            const sectionAudit = document.getElementById('sectionAudit');
-            const sectionUtilities = document.getElementById('sectionUtilities');
+            const sectionEmployee = document.getElementById('sectionEmployee');
+            const sectionRecruitment = document.getElementById('sectionRecruitment');
+            const sectionHRFunctions = document.getElementById('sectionHRFunctions');
             const sectionActivityLog = document.getElementById('sectionActivityLog');
 
             function showSection(section) {
-                sectionUserRole.classList.remove('active');
-                sectionOrgSettings.classList.remove('active');
-                sectionAccounting.classList.remove('active');
-                sectionMasterData.classList.remove('active');
-                sectionAudit.classList.remove('active');
-                sectionUtilities.classList.remove('active');
+                sectionEmployee.classList.remove('active');
+                sectionRecruitment.classList.remove('active');
+                sectionHRFunctions.classList.remove('active');
                 sectionActivityLog.style.display = 'none';
-                btnUserRole.classList.remove('active');
-                btnOrgSettings.classList.remove('active');
-                btnAccounting.classList.remove('active');
-                btnMasterData.classList.remove('active');
-                btnAudit.classList.remove('active');
-                btnUtilities.classList.remove('active');
+                btnEmployee.classList.remove('active');
+                btnRecruitment.classList.remove('active');
+                btnHRFunctions.classList.remove('active');
                 btnActivityLog.classList.remove('active');
                 if (section === sectionActivityLog) {
                     sectionActivityLog.style.display = 'block';
@@ -1056,81 +1098,24 @@ $hr_functions = [
                 }
             }
 
-            btnUserRole.addEventListener('click', function () {
-                showSection(sectionUserRole);
-                btnUserRole.classList.add('active');
+            btnEmployee.addEventListener('click', function () {
+                showSection(sectionEmployee);
+                btnEmployee.classList.add('active');
             });
-            btnOrgSettings.addEventListener('click', function () {
-                showSection(sectionOrgSettings);
-                btnOrgSettings.classList.add('active');
+
+            btnRecruitment.addEventListener('click', function () {
+                showSection(sectionRecruitment);
+                btnRecruitment.classList.add('active');
             });
-            btnAccounting.addEventListener('click', function () {
-                showSection(sectionAccounting);
-                btnAccounting.classList.add('active');
+
+            btnHRFunctions.addEventListener('click', function () {
+                showSection(sectionHRFunctions);
+                btnHRFunctions.classList.add('active');
             });
-            btnMasterData.addEventListener('click', function () {
-                showSection(sectionMasterData);
-                btnMasterData.classList.add('active');
-            });
-            btnAudit.addEventListener('click', function () {
-                showSection(sectionAudit);
-                btnAudit.classList.add('active');
-            });
-            btnUtilities.addEventListener('click', function () {
-                showSection(sectionUtilities);
-                btnUtilities.classList.add('active');
-            });
+
             btnActivityLog.addEventListener('click', function () {
                 showSection(sectionActivityLog);
                 btnActivityLog.classList.add('active');
-            });
-
-            // Category switching logic for new buttons/sections
-            const sections = {
-                btnCompanyProfile: 'sectionCompanyProfile',
-                btnCurrency: 'sectionCurrency',
-                btnChartOfAccounts: 'sectionChartOfAccounts',
-                btnPaymentTerms: 'sectionPaymentTerms',
-                btnAccessLogs: 'sectionAccessLogs',
-                btnRetention: 'sectionRetention',
-                btnBackup: 'sectionBackup',
-                btnNotifications: 'sectionNotifications'
-            };
-            Object.keys(sections).forEach(btnId => {
-                const btn = document.getElementById(btnId);
-                const sectionId = sections[btnId];
-                const section = document.getElementById(sectionId);
-                if (btn && section) {
-                    btn.addEventListener('click', function () {
-                        Object.keys(sections).forEach(otherBtnId => {
-                            document.getElementById(sections[otherBtnId]).classList.remove('active');
-                            const otherBtn = document.getElementById(otherBtnId);
-                            otherBtn.classList.remove('active');
-                            otherBtn.setAttribute('aria-selected', 'false');
-                            otherBtn.setAttribute('tabindex', '-1');
-                        });
-                        section.classList.add('active');
-                        btn.classList.add('active');
-                        btn.setAttribute('aria-selected', 'true');
-                        btn.setAttribute('tabindex', '0');
-                        btn.focus();
-                    });
-                    btn.addEventListener('keydown', function (e) {
-                        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                            e.preventDefault();
-                            const btns = Array.from(document.querySelectorAll('.category-btn'));
-                            const idx = btns.indexOf(document.activeElement);
-                            let nextIdx = e.key === 'ArrowRight' ? idx + 1 : idx - 1;
-                            if (nextIdx < 0) nextIdx = btns.length - 1;
-                            if (nextIdx >= btns.length) nextIdx = 0;
-                            btns[nextIdx].focus();
-                        }
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    });
-                }
             });
         });
     </script>
