@@ -7,6 +7,10 @@
                 <tr>
                     <th class="text-left">ID</th>
                     <th class="text-left">Name</th>
+                    <th class="text-left">TIN</th>
+                    <th class="text-left">SSS</th>
+                    <th class="text-left">PhilHealth</th>
+                    <th class="text-left">Pag-IBIG</th>
                     <th class="text-right">Basic Salary</th>
                     <th class="text-right">Allowances</th>
                     <th class="text-right">Deductions</th>
@@ -22,6 +26,10 @@
                     [
                         'id' => 'EMP001',
                         'name' => 'John Doe',
+                        'tin' => '123-456-789-000',
+                        'sss' => '01-2345678-9',
+                        'philhealth' => '01-234567890-1',
+                        'pagibig' => '1234-5678-9012',
                         'basic_salary' => 25000,
                         'allowances' => 5000,
                         'deductions' => 2500,
@@ -32,6 +40,10 @@
                     [
                         'id' => 'EMP002',
                         'name' => 'Jane Smith',
+                        'tin' => '987-654-321-000',
+                        'sss' => '02-3456789-0',
+                        'philhealth' => '02-345678901-2',
+                        'pagibig' => '2345-6789-0123',
                         'basic_salary' => 20000,
                         'allowances' => 3000,
                         'deductions' => 1800,
@@ -42,6 +54,10 @@
                     [
                         'id' => 'EMP003',
                         'name' => 'Robert Johnson',
+                        'tin' => '456-789-123-000',
+                        'sss' => '03-4567890-1',
+                        'philhealth' => '03-456789012-3',
+                        'pagibig' => '3456-7890-1234',
                         'basic_salary' => 18000,
                         'allowances' => 2500,
                         'deductions' => 1500,
@@ -60,6 +76,10 @@
                 <tr>
                     <td class="text-left"><?php echo htmlspecialchars($employee['id']); ?></td>
                     <td class="text-left"><?php echo htmlspecialchars($employee['name']); ?></td>
+                    <td class="text-left"><?php echo htmlspecialchars($employee['tin']); ?></td>
+                    <td class="text-left"><?php echo htmlspecialchars($employee['sss']); ?></td>
+                    <td class="text-left"><?php echo htmlspecialchars($employee['philhealth']); ?></td>
+                    <td class="text-left"><?php echo htmlspecialchars($employee['pagibig']); ?></td>
                     <td class="text-right"><?php echo format_currency($employee['basic_salary']); ?></td>
                     <td class="text-right"><?php echo format_currency($employee['allowances']); ?></td>
                     <td class="text-right"><?php echo format_currency($employee['deductions']); ?></td>
@@ -74,7 +94,7 @@
                 <?php endforeach; ?>
                 <!-- Total Row -->
                 <tr class="total-row">
-                    <td colspan="2" class="text-right"><strong>Total:</strong></td>
+                    <td colspan="6" class="text-right"><strong>Total:</strong></td>
                     <td class="text-right"><strong><?php echo format_currency(array_sum(array_column($payroll_data, 'basic_salary'))); ?></strong></td>
                     <td class="text-right"><strong><?php echo format_currency(array_sum(array_column($payroll_data, 'allowances'))); ?></strong></td>
                     <td class="text-right"><strong><?php echo format_currency(array_sum(array_column($payroll_data, 'deductions'))); ?></strong></td>
@@ -114,7 +134,7 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 0.9rem;
-        min-width: 800px;
+        min-width: 1100px;
     }
 
     .summary-table th {
@@ -191,6 +211,18 @@
     }
 
     /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .summary-table {
+            min-width: 1000px;
+        }
+        
+        .summary-table th,
+        .summary-table td {
+            padding: 10px 12px;
+            font-size: 0.85rem;
+        }
+    }
+
     @media (max-width: 768px) {
         .summary-section {
             padding: 15px;
@@ -200,7 +232,7 @@
         .summary-table th,
         .summary-table td {
             padding: 10px 8px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
     }
 </style>
