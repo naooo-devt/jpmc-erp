@@ -10,138 +10,7 @@ require_once 'db_connect.php';
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
 
-// Sample employee data - in a real application, this would come from the database
-$employees = [
-    [
-        'id' => 'JPMC-HRD-025',
-        'name' => 'ROBIN NOMBRANDO',
-        'position' => 'PROCESS ENGINEER',
-        'department' => 'Engineering',
-        'date_hired' => '2022-03-01',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09171234567',
-        'email' => 'robin.nombrando@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-026',
-        'name' => 'JONATHAN RAY Y. ANTIONIO',
-        'position' => 'QA SUPERVISOR',
-        'department' => 'Quality Assurance',
-        'date_hired' => '2021-06-15',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09181234567',
-        'email' => 'jonathan.antonio@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-027',
-        'name' => 'ALBERT B. ALACAPA',
-        'position' => 'WAREHOUSEMAN',
-        'department' => 'Warehouse',
-        'date_hired' => '2023-01-10',
-        'employment_type' => 'Probationary',
-        'status' => 'Active',
-        'contact' => '09191234567',
-        'email' => 'albert.alacapa@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-028',
-        'name' => 'MARDY AGUILAR',
-        'position' => 'MOLD FABRICATOR',
-        'department' => 'Production',
-        'date_hired' => '2022-11-05',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09201234567',
-        'email' => 'mardy.aguilar@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-029',
-        'name' => 'JOHN BRYAN FERRER',
-        'position' => 'IT SUPERVISOR',
-        'department' => 'IT Department',
-        'date_hired' => '2020-02-20',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09211234567',
-        'email' => 'john.ferrer@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-030',
-        'name' => 'ANABEL E. PANUNCIAR',
-        'position' => 'MACHINE OPERATOR',
-        'department' => 'Production',
-        'date_hired' => '2023-03-15',
-        'employment_type' => 'Probationary',
-        'status' => 'Active',
-        'contact' => '09221234567',
-        'email' => 'anabel.panunciar@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-031',
-        'name' => 'RICKY V. TONGOL',
-        'position' => 'QUALITY CONTROL',
-        'department' => 'Quality Assurance',
-        'date_hired' => '2021-08-25',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09231234567',
-        'email' => 'ricky.tongol@company.com'
-    ]
-];
-
-// Sample recruitment data
-$applicants = [
-    [
-        'id' => 'APP-001',
-        'name' => 'MARIA SANTOS',
-        'position_applied' => 'QA SUPERVISOR',
-        'date_applied' => '2024-06-01',
-        'status' => 'Screening',
-        'contact' => '09181234567',
-        'email' => 'maria.santos@gmail.com',
-        'resume' => '#',
-        'assigned_hr' => 'JONATHAN RAY Y. ANTIONIO'
-    ],
-    [
-        'id' => 'APP-002',
-        'name' => 'JUAN DELA CRUZ',
-        'position_applied' => 'PROCESS ENGINEER',
-        'date_applied' => '2024-06-05',
-        'status' => 'Interview',
-        'contact' => '09191234567',
-        'email' => 'juan.delacruz@gmail.com',
-        'resume' => '#',
-        'assigned_hr' => 'ROBIN NOMBRANDO'
-    ]
-];
-
-// Sample HR functions data
-$hr_functions = [
-    [
-        'employee_id' => 'JPMC-HRD-025',
-        'name' => 'ROBIN NOMBRANDO',
-        'leave_type' => 'Sick Leave',
-        'date_filed' => '2024-05-20',
-        'leave_duration' => '2024-05-21 to 2024-05-23',
-        'status' => 'Approved',
-        'benefit_type' => 'Health',
-        'benefit_start' => '2024-06-01',
-        'remarks' => 'Medical certificate provided'
-    ],
-    [
-        'employee_id' => 'JPMC-HRD-026',
-        'name' => 'JONATHAN RAY Y. ANTIONIO',
-        'leave_type' => 'Vacation Leave',
-        'date_filed' => '2024-05-15',
-        'leave_duration' => '2024-05-16 to 2024-05-18',
-        'status' => 'Pending',
-        'benefit_type' => 'Paid Time Off',
-        'benefit_start' => '2024-06-10',
-        'remarks' => 'N/A'
-    ]
-];
+// Remove hardcoded data. Data will be fetched from the database in each section.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -630,7 +499,12 @@ $hr_functions = [
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($employees as $employee): ?>
+                                    <?php
+                                    // Fetch employees from the database
+                                    $result = $conn->query("SELECT * FROM employees");
+                                    if ($result && $result->num_rows > 0):
+                                        while ($employee = $result->fetch_assoc()):
+                                    ?>
                                         <tr data-employee-id="<?php echo $employee['id']; ?>">
                                             <td><span class="employee-id"><?php echo htmlspecialchars($employee['id']); ?></span></td>
                                             <td><span class="employee-name"><?php echo htmlspecialchars($employee['name']); ?></span></td>
@@ -663,7 +537,12 @@ $hr_functions = [
                                                 </div>
                                             </td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php
+                                        endwhile;
+                                    else:
+                                        echo '<tr><td colspan="10" style="text-align:center;">No employees found.</td></tr>';
+                                    endif;
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -726,7 +605,12 @@ $hr_functions = [
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($applicants as $applicant): ?>
+                                    <?php
+                                    // Fetch applicants from the database
+                                    $result = $conn->query("SELECT * FROM applicants");
+                                    if ($result && $result->num_rows > 0):
+                                        while ($applicant = $result->fetch_assoc()):
+                                    ?>
                                         <tr data-applicant-id="<?php echo $applicant['id']; ?>">
                                             <td><?php echo htmlspecialchars($applicant['id']); ?></td>
                                             <td><?php echo htmlspecialchars($applicant['name']); ?></td>
@@ -761,7 +645,12 @@ $hr_functions = [
                                                 </div>
                                             </td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php
+                                        endwhile;
+                                    else:
+                                        echo '<tr><td colspan="10" style="text-align:center;">No applicants found.</td></tr>';
+                                    endif;
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -819,7 +708,12 @@ $hr_functions = [
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($hr_functions as $hr): ?>
+                                    <?php
+                                    // Fetch HR functions from the database
+                                    $result = $conn->query("SELECT * FROM hr_functions");
+                                    if ($result && $result->num_rows > 0):
+                                        while ($hr = $result->fetch_assoc()):
+                                    ?>
                                         <tr data-employee-id="<?php echo $hr['employee_id']; ?>">
                                             <td><?php echo htmlspecialchars($hr['employee_id']); ?></td>
                                             <td><?php echo htmlspecialchars($hr['name']); ?></td>
@@ -850,7 +744,12 @@ $hr_functions = [
                                                 </div>
                                             </td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php
+                                        endwhile;
+                                    else:
+                                        echo '<tr><td colspan="10" style="text-align:center;">No HR functions found.</td></tr>';
+                                    endif;
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -882,17 +781,27 @@ $hr_functions = [
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Example static row, replace with PHP fetching from DB -->
-                                    <tr>
-                                        <td>1</td>
-                                        <td>101</td>
-                                        <td>admin</td>
-                                        <td>Login</td>
-                                        <td>User logged in</td>
-                                        <td>192.168.1.10</td>
-                                        <td>2024-06-10 09:15:00</td>
-                                    </tr>
-                                    <!-- ...existing code for dynamic rows... -->
+                                    <?php
+                                    // Fetch activity logs from the database
+                                    $result = $conn->query("SELECT * FROM activity_logs ORDER BY datetime DESC LIMIT 100");
+                                    if ($result && $result->num_rows > 0):
+                                        while ($log = $result->fetch_assoc()):
+                                    ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($log['id']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['user_id']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['username']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['action']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['details']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['ip_address']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['datetime']); ?></td>
+                                        </tr>
+                                    <?php
+                                        endwhile;
+                                    else:
+                                        echo '<tr><td colspan="7" style="text-align:center;">No activity logs found.</td></tr>';
+                                    endif;
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
