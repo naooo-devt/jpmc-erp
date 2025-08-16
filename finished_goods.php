@@ -437,11 +437,39 @@ $role = htmlspecialchars($_SESSION['role']);
                                 <i class="fas fa-download"></i>
                                 <span>Export</span>
                             </button>
-                            <button class="btn btn-primary" id="addEmployeeBtn">
+                            <button class="btn btn-primary" id="addEmployeeBtn" type="button">
                                 <i class="fas fa-plus"></i>
                                 <span>Add Employee</span>
                             </button>
+                            <button class="btn btn-success" id="inputEmployeeBtn" type="button">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Input Data</span>
+                            </button>
                         </div>
+                    </div>
+                    <!-- Employee Input Modal -->
+                    <div id="employeeInputModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+                        <form method="post" action="employee_add.php" style="background:#fff; padding:2rem; border-radius:12px; min-width:350px; max-width:90vw;">
+                            <h3>Add Employee</h3>
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <input name="id" class="filter-input" placeholder="Employee ID" required>
+                                <input name="name" class="filter-input" placeholder="Full Name" required>
+                                <input name="position" class="filter-input" placeholder="Position/Job Title" required>
+                                <input name="department" class="filter-input" placeholder="Department" required>
+                                <input name="date_hired" class="filter-input" type="date" placeholder="Date Hired" required>
+                                <input name="employment_type" class="filter-input" placeholder="Employment Type" required>
+                                <select name="status" class="filter-input" required>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                                <input name="contact" class="filter-input" placeholder="Contact Number" required>
+                                <input name="email" class="filter-input" type="email" placeholder="Email Address" required>
+                                <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                                    <button type="button" class="btn btn-outline" id="closeEmployeeInputModal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
                     <div class="filter-section">
@@ -553,15 +581,46 @@ $role = htmlspecialchars($_SESSION['role']);
                     <div class="system-admin-header">
                         <div class="system-admin-title">Recruitment Management</div>
                         <div class="system-admin-actions">
-                            <button class="btn btn-outline" id="exportRecruitmentBtn">
+                            <button class="btn btn-outline" id="exportRecruitmentBtn" type="button">
                                 <i class="fas fa-download"></i>
                                 <span>Export</span>
                             </button>
-                            <button class="btn btn-primary" id="addApplicantBtn">
+                            <button class="btn btn-primary" id="addApplicantBtn" type="button">
                                 <i class="fas fa-plus"></i>
                                 <span>Add Applicant</span>
                             </button>
+                            <button class="btn btn-success" id="inputApplicantBtn" type="button">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Input Data</span>
+                            </button>
                         </div>
+                    </div>
+                    <!-- Applicant Input Modal -->
+                    <div id="applicantInputModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+                        <form method="post" action="applicant_add.php" enctype="multipart/form-data" style="background:#fff; padding:2rem; border-radius:12px; min-width:350px; max-width:90vw;">
+                            <h3>Add Applicant</h3>
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <input name="id" class="filter-input" placeholder="Applicant ID" required>
+                                <input name="name" class="filter-input" placeholder="Full Name" required>
+                                <input name="position_applied" class="filter-input" placeholder="Position Applied" required>
+                                <input name="date_applied" class="filter-input" type="date" placeholder="Date Applied" required>
+                                <select name="status" class="filter-input" required>
+                                    <option value="Screening">Screening</option>
+                                    <option value="Interview">Interview</option>
+                                    <option value="Hired">Hired</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                                <input name="contact" class="filter-input" placeholder="Contact Number" required>
+                                <input name="email" class="filter-input" type="email" placeholder="Email Address" required>
+                                <label style="font-size:0.95em;">Resume/CV:</label>
+                                <input name="resume_file" class="filter-input" type="file" accept=".pdf,.doc,.docx" required>
+                                <input name="assigned_hr" class="filter-input" placeholder="Assigned HR" required>
+                                <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                                    <button type="button" class="btn btn-outline" id="closeApplicantInputModal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div class="filter-section">
                         <div class="filter-row">
@@ -665,7 +724,36 @@ $role = htmlspecialchars($_SESSION['role']);
                                 <i class="fas fa-download"></i>
                                 <span>Export</span>
                             </button>
+                            <button class="btn btn-success" id="inputHRBtn">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Input Data</span>
+                            </button>
                         </div>
+                    </div>
+                    <!-- HR Function Input Modal -->
+                    <div id="hrInputModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+                        <form method="post" action="hr_function_add.php" style="background:#fff; padding:2rem; border-radius:12px; min-width:350px; max-width:90vw;">
+                            <h3>Add HR Function</h3>
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <input name="employee_id" class="filter-input" placeholder="Employee ID" required>
+                                <input name="name" class="filter-input" placeholder="Full Name" required>
+                                <input name="leave_type" class="filter-input" placeholder="Leave Type" required>
+                                <input name="date_filed" class="filter-input" type="date" placeholder="Date Filed" required>
+                                <input name="leave_duration" class="filter-input" placeholder="Leave Duration" required>
+                                <select name="status" class="filter-input" required>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Denied">Denied</option>
+                                </select>
+                                <input name="benefit_type" class="filter-input" placeholder="Benefit Type" required>
+                                <input name="benefit_start" class="filter-input" type="date" placeholder="Benefit Start Date" required>
+                                <input name="remarks" class="filter-input" placeholder="Remarks">
+                                <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                                    <button type="button" class="btn btn-outline" id="closeHRInputModal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div class="filter-section">
                         <div class="filter-row">
@@ -764,7 +852,30 @@ $role = htmlspecialchars($_SESSION['role']);
                                 <i class="fas fa-download"></i>
                                 <span>Export</span>
                             </button>
+                            <!-- Add Data Button -->
+                            <button class="btn btn-success" id="inputActivityLogBtn">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Input Data</span>
+                            </button>
                         </div>
+                    </div>
+                    <!-- Activity Log Input Modal -->
+                    <div id="activityLogInputModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+                        <form method="post" action="activity_log_add.php" style="background:#fff; padding:2rem; border-radius:12px; min-width:350px; max-width:90vw;">
+                            <h3>Add Activity Log</h3>
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <input name="user_id" class="filter-input" placeholder="User ID" required>
+                                <input name="username" class="filter-input" placeholder="Username" required>
+                                <input name="action" class="filter-input" placeholder="Action" required>
+                                <input name="details" class="filter-input" placeholder="Details" required>
+                                <input name="ip_address" class="filter-input" placeholder="IP Address" required>
+                                <input name="datetime" class="filter-input" type="datetime-local" placeholder="Date/Time" required>
+                                <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                                    <button type="button" class="btn btn-outline" id="closeActivityLogInputModal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div class="table-container">
                         <div class="table-scroll-x">
@@ -1026,6 +1137,53 @@ $role = htmlspecialchars($_SESSION['role']);
                 showSection(sectionActivityLog);
                 btnActivityLog.classList.add('active');
             });
+
+            // Example: Add click handlers for input buttons (replace with modal/form logic as needed)
+            document.getElementById('inputEmployeeBtn').addEventListener('click', function () {
+                alert('Open input form for Employee Management');
+            });
+            document.getElementById('inputApplicantBtn').addEventListener('click', function () {
+                alert('Open input form for Recruitment Management');
+            });
+            document.getElementById('inputHRBtn').addEventListener('click', function () {
+                alert('Open input form for HR Functions');
+            });
+            document.getElementById('inputActivityLogBtn').addEventListener('click', function () {
+                alert('Open input form for Activity Log');
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            // Employee Modal logic
+            function showEmployeeModal() {
+                document.getElementById('employeeInputModal').style.display = 'flex';
+            }
+            function hideEmployeeModal() {
+                document.getElementById('employeeInputModal').style.display = 'none';
+            }
+            document.getElementById('addEmployeeBtn').onclick = showEmployeeModal;
+            document.getElementById('inputEmployeeBtn').onclick = showEmployeeModal;
+            document.getElementById('closeEmployeeInputModal').onclick = hideEmployeeModal;
+
+            // Applicant Modal logic
+            function showApplicantModal() {
+                document.getElementById('applicantInputModal').style.display = 'flex';
+            }
+            function hideApplicantModal() {
+                document.getElementById('applicantInputModal').style.display = 'none';
+            }
+            document.getElementById('addApplicantBtn').onclick = showApplicantModal;
+            document.getElementById('inputApplicantBtn').onclick = showApplicantModal;
+            document.getElementById('closeApplicantInputModal').onclick = hideApplicantModal;
+
+            // Activity Log Modal logic
+            function showActivityLogModal() {
+                document.getElementById('activityLogInputModal').style.display = 'flex';
+            }
+            function hideActivityLogModal() {
+                document.getElementById('activityLogInputModal').style.display = 'none';
+            }
+            document.getElementById('inputActivityLogBtn').onclick = showActivityLogModal;
+            document.getElementById('closeActivityLogInputModal').onclick = hideActivityLogModal;
         });
     </script>
 </body>
