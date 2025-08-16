@@ -147,198 +147,185 @@ $role = htmlspecialchars($_SESSION['role']);
                         </button>
                     </div>
                     <div class="report-results" id="reportResults">
-                        <!-- Inventory Summary (default) -->
-                        <div id="inventorySummarySection">
-                            <h3>Monthly Inventory Report - May 2025</h3>
-                            <div class="report-summary">
-                                <div class="summary-item">
-                                    <h4>Total Inventory</h4>
-                                    <p>217 Bags</p>
-                                </div>
-                                <div class="summary-item">
-                                    <h4>Materials In</h4>
-                                    <p>0 Bags</p>
-                                </div>
-                                <div class="summary-item">
-                                    <h4>Materials Out</h4>
-                                    <p>45 Bags</p>
-                                </div>
-                                <div class="summary-item">
-                                    <h4>Low Stock Items</h4>
-                                    <p>5 Items</p>
-                                </div>
-                            </div>
-                            <div class="report-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Product</th>
-                                            <th>In</th>
-                                            <th>Out</th>
-                                            <th>Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>GAS KNOB (10 Bags)</td>
-                                            <td>0</td>
-                                            <td>9 Bags</td>
-                                            <td>1 Bag</td>
-                                        </tr>
-                                        <tr>
-                                            <td>PLASTIC CORE (75 Bags)</td>
-                                            <td>0</td>
-                                            <td>5 Bags</td>
-                                            <td>70 Bags</td>
-                                        </tr>
-                                        <tr>
-                                            <td>SWITCH KNOB (7 Bags)</td>
-                                            <td>0</td>
-                                            <td>6 Bags</td>
-                                            <td>1 Bag</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="report-chart">
-                                <canvas id="reportChart"></canvas>
-                            </div>
-                        </div>
-                        <!-- Transaction Log Section -->
-                        <div id="transactionLogSection" style="display:none;">
-                            <h3>Transaction Log</h3>
-                            <div class="report-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Transaction ID</th>
-                                            <th>Type</th>
-                                            <th>Product</th>
-                                            <th>Quantity</th>
-                                            <th>User</th>
-                                            <th>Remarks</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $transactions = [];
-                                        $result_tx = $conn->query("SELECT date, transaction_id, type, product, quantity, user, remarks FROM transactions ORDER BY date DESC LIMIT 50");
-                                        if ($result_tx && $result_tx->num_rows > 0) {
-                                            while ($row = $result_tx->fetch_assoc()) {
-                                                $transactions[] = $row;
-                                            }
-                                        }
-                                        ?>
-                                        <?php if (!empty($transactions)): ?>
-                                            <?php foreach ($transactions as $tx): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($tx['date']))); ?></td>
-                                                <td><?php echo htmlspecialchars($tx['transaction_id']); ?></td>
-                                                <td><?php echo htmlspecialchars($tx['type']); ?></td>
-                                                <td><?php echo htmlspecialchars($tx['product']); ?></td>
-                                                <td><?php echo htmlspecialchars($tx['quantity']); ?></td>
-                                                <td><?php echo htmlspecialchars($tx['user']); ?></td>
-                                                <td><?php echo htmlspecialchars($tx['remarks']); ?></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr><td colspan="7" style="text-align:center;">No transactions found.</td></tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <!-- Monthly Summary Section -->
-                        <div id="monthlySummarySection" style="display:none;">
-                            <h3>Monthly Summary</h3>
-                            <div class="report-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Month</th>
-                                            <th>Total In</th>
-                                            <th>Total Out</th>
-                                            <th>Net Change</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $monthly = [];
-                                        $result_month = $conn->query("
-                                            SELECT DATE_FORMAT(date, '%Y-%m') as month,
-                                                SUM(CASE WHEN type='IN' THEN quantity ELSE 0 END) as total_in,
-                                                SUM(CASE WHEN type='OUT' THEN quantity ELSE 0 END) as total_out
-                                            FROM transactions
-                                            GROUP BY month
-                                            ORDER BY month DESC
-                                            LIMIT 12
-                                        ");
-                                        if ($result_month && $result_month->num_rows > 0) {
-                                            while ($row = $result_month->fetch_assoc()) {
-                                                $row['net'] = $row['total_in'] - $row['total_out'];
-                                                $monthly[] = $row;
-                                            }
-                                        }
-                                        ?>
-                                        <?php if (!empty($monthly)): ?>
-                                            <?php foreach ($monthly as $m): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($m['month']); ?></td>
-                                                <td><?php echo htmlspecialchars($m['total_in']); ?></td>
-                                                <td><?php echo htmlspecialchars($m['total_out']); ?></td>
-                                                <td><?php echo htmlspecialchars($m['net']); ?></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr><td colspan="4" style="text-align:center;">No monthly summary data found.</td></tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <!-- Low Stock Report Section -->
-                        <div id="lowStockSection" style="display:none;">
-                            <h3>Low Stock Report</h3>
-                            <div class="report-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Product</th>
-                                            <th>Stock</th>
-                                            <th>Minimum Required</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $low_stock = [];
-                                        $result_low = $conn->query("SELECT product_name, stock, status FROM finished_goods WHERE stock < 10 ORDER BY stock ASC");
-                                        if ($result_low && $result_low->num_rows > 0) {
-                                            while ($row = $result_low->fetch_assoc()) {
-                                                $low_stock[] = $row;
-                                            }
-                                        }
-                                        ?>
-                                        <?php if (!empty($low_stock)): ?>
-                                            <?php foreach ($low_stock as $item): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($item['product_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($item['stock']); ?></td>
-                                                <td>10</td>
-                                                <td>
-                                                    <span style="color:#ef4444;font-weight:600;">Low</span>
-                                                </td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr><td colspan="4" style="text-align:center;">No low stock items found.</td></tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Inventory Summary (default) -->
+    <div id="inventorySummarySection">
+        <h3>Inventory Summary</h3>
+        <div class="report-summary">
+            <?php
+            // Fetch inventory summary data from DB
+            $total_inventory = 0;
+            $materials_in = 0;
+            $materials_out = 0;
+            $low_stock_items = 0;
+            $summary = [];
+            $result = $conn->query("SELECT product_name, stock, stock_in, stock_out FROM finished_goods");
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $total_inventory += $row['stock'];
+                    $materials_in += $row['stock_in'];
+                    $materials_out += $row['stock_out'];
+                    if ($row['stock'] < 10) $low_stock_items++;
+                    $summary[] = $row;
+                }
+            }
+            ?>
+            <div class="summary-item">
+                <h4>Total Inventory</h4>
+                <p><?= $total_inventory ?> Bags</p>
+            </div>
+            <div class="summary-item">
+                <h4>Materials In</h4>
+                <p><?= $materials_in ?> Bags</p>
+            </div>
+            <div class="summary-item">
+                <h4>Materials Out</h4>
+                <p><?= $materials_out ?> Bags</p>
+            </div>
+            <div class="summary-item">
+                <h4>Low Stock Items</h4>
+                <p><?= $low_stock_items ?> Items</p>
+            </div>
+        </div>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($summary)): ?>
+                        <?php foreach ($summary as $item): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($item['product_name']) ?></td>
+                            <td><?= htmlspecialchars($item['stock_in']) ?></td>
+                            <td><?= htmlspecialchars($item['stock_out']) ?></td>
+                            <td><?= htmlspecialchars($item['stock']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="4" style="text-align:center;">No inventory summary data found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <!-- ...existing chart code if any... -->
+    </div>
+    <!-- Transaction Log Section -->
+    <div id="transactionLogSection" style="display:none;">
+        <h3>Transaction Log</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Transaction ID</th>
+                        <th>Type</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>User</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_tx = $conn->query("SELECT date, transaction_id, type, product, quantity, user, remarks FROM transactions ORDER BY date DESC LIMIT 50");
+                    if ($result_tx && $result_tx->num_rows > 0):
+                        while ($tx = $result_tx->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($tx['date']))) ?></td>
+                        <td><?= htmlspecialchars($tx['transaction_id']) ?></td>
+                        <td><?= htmlspecialchars($tx['type']) ?></td>
+                        <td><?= htmlspecialchars($tx['product']) ?></td>
+                        <td><?= htmlspecialchars($tx['quantity']) ?></td>
+                        <td><?= htmlspecialchars($tx['user']) ?></td>
+                        <td><?= htmlspecialchars($tx['remarks']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="7" style="text-align:center;">No transactions found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Monthly Summary Section -->
+    <div id="monthlySummarySection" style="display:none;">
+        <h3>Monthly Summary</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Total In</th>
+                        <th>Total Out</th>
+                        <th>Net Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_month = $conn->query("
+                        SELECT DATE_FORMAT(date, '%Y-%m') as month,
+                            SUM(CASE WHEN type='IN' THEN quantity ELSE 0 END) as total_in,
+                            SUM(CASE WHEN type='OUT' THEN quantity ELSE 0 END) as total_out
+                        FROM transactions
+                        GROUP BY month
+                        ORDER BY month DESC
+                        LIMIT 12
+                    ");
+                    if ($result_month && $result_month->num_rows > 0):
+                        while ($m = $result_month->fetch_assoc()):
+                            $net = $m['total_in'] - $m['total_out'];
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($m['month']) ?></td>
+                        <td><?= htmlspecialchars($m['total_in']) ?></td>
+                        <td><?= htmlspecialchars($m['total_out']) ?></td>
+                        <td><?= htmlspecialchars($net) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="4" style="text-align:center;">No monthly summary data found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Low Stock Report Section -->
+    <div id="lowStockSection" style="display:none;">
+        <h3>Low Stock Report</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Stock</th>
+                        <th>Minimum Required</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_low = $conn->query("SELECT product_name, stock, status FROM finished_goods WHERE stock < 10 ORDER BY stock ASC");
+                    if ($result_low && $result_low->num_rows > 0):
+                        while ($item = $result_low->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($item['product_name']) ?></td>
+                        <td><?= htmlspecialchars($item['stock']) ?></td>
+                        <td>10</td>
+                        <td><span style="color:#ef4444;font-weight:600;">Low</span></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="4" style="text-align:center;">No low stock items found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
                 </div>
                 <div class="section-header" style="margin-top:2rem;">
                     <h2 style="margin-bottom: 0;">History Report</h2>
@@ -386,85 +373,9 @@ $role = htmlspecialchars($_SESSION['role']);
                         </button>
                     </div>
                     <div class="report-results" id="historyReportResults">
-                        <!-- History report content will be dynamically loaded here -->
-                        <div id="historyFinanceSection" style="display:none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3 style="margin: 0;">Finance Report</h3>
-        <div class="account-filters" style="display: flex; gap: 1rem; align-items: center;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                <label style="color: #374151; font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 500;">Account Type:</label>
-                <select id="accountTypeFilter" style="background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem; font-size: 0.875rem; color: #374151; min-width: 120px; cursor: pointer;">
-                    <option value="all">All Accounts</option>
-                    <option value="expenses">Expenses</option>
-                    <option value="income">Income</option>
-                    <option value="budget">Budget</option>
-                </select>
-            </div>
-            <!-- Removed Test Filter and Reset All buttons -->
-        </div>
-    </div>
-        
-        <?php
-        // Collect all finance data from different tables
-        $all_finance_data = [];
-        
-        // Debug: Check if we can connect to database
-        if (!$conn) {
-            echo "<!-- Database connection failed -->";
-        } else {
-            echo "<!-- Database connected successfully -->";
-        }
-        
-        // Get expenses data
-        $expenses_query = "SELECT date, 'Expense' as transaction_type, amount, category as type, 'Expenses' as account, amount as expenses, 0 as income, 0 as budgeting, description as remarks FROM expenses ORDER BY date DESC LIMIT 20";
-        $expenses_result = $conn->query($expenses_query);
-        if ($expenses_result && $expenses_result->num_rows > 0) {
-            echo "<!-- Found " . $expenses_result->num_rows . " expenses records -->";
-            while ($row = $expenses_result->fetch_assoc()) {
-                $all_finance_data[] = $row;
-            }
-        } else {
-            echo "<!-- No expenses data found. Error: " . ($conn->error ?: 'No rows') . " -->";
-        }
-        
-        // Get income data
-        $income_query = "SELECT date, 'Income' as transaction_type, amount, source as type, 'Income' as account, 0 as expenses, amount as income, 0 as budgeting, description as remarks FROM income ORDER BY date DESC LIMIT 20";
-        $income_result = $conn->query($income_query);
-        if ($income_result && $income_result->num_rows > 0) {
-            echo "<!-- Found " . $income_result->num_rows . " income records -->";
-            while ($row = $income_result->fetch_assoc()) {
-                $all_finance_data[] = $row;
-            }
-        } else {
-            echo "<!-- No income data found. Error: " . ($conn->error ?: 'No rows') . " -->";
-        }
-        
-        // Get budget data
-        $budget_query = "SELECT created_at as date, 'Budget' as transaction_type, allocated as amount, category as type, 'Budget' as account, spent as expenses, allocated as income, allocated as budgeting, CONCAT('Allocated: $', allocated, ' | Spent: $', spent, ' | Remaining: $', remaining) as remarks FROM budget ORDER BY created_at DESC LIMIT 20";
-        $budget_result = $conn->query($budget_query);
-        if ($budget_result && $budget_result->num_rows > 0) {
-            echo "<!-- Found " . $budget_result->num_rows . " budget records -->";
-            while ($row = $budget_result->fetch_assoc()) {
-                $all_finance_data[] = $row;
-            }
-        } else {
-            echo "<!-- No budget data found. Error: " . ($conn->error ?: 'No rows') . " -->";
-        }
-        
-        echo "<!-- Total finance records collected: " . count($all_finance_data) . " -->";
-        
-        // Sort all data by date (newest first)
-        usort(
-            $all_finance_data,
-            function ($a, $b) {
-                return strtotime($b['date']) - strtotime($a['date']);
-            }
-        );
-        
-        // Limit to 50 total records
-        $all_finance_data = array_slice($all_finance_data, 0, 50);
-        ?>
-        
+    <!-- Finance History Section -->
+    <div id="historyFinanceSection" style="display:none;">
+        <h3>Finance Report</h3>
         <div class="report-table">
             <table>
                 <thead>
@@ -482,77 +393,31 @@ $role = htmlspecialchars($_SESSION['role']);
                 </thead>
                 <tbody>
                     <?php
-                    // Collect all finance data from different tables
+                    // Expenses
+                    $expenses_result = $conn->query("SELECT date, 'Expense' as transaction_type, amount, category as type, 'Expenses' as account, amount as expenses, 0 as income, 0 as budgeting, description as remarks FROM expenses ORDER BY date DESC LIMIT 20");
+                    // Income
+                    $income_result = $conn->query("SELECT date, 'Income' as transaction_type, amount, source as type, 'Income' as account, 0 as expenses, amount as income, 0 as budgeting, description as remarks FROM income ORDER BY date DESC LIMIT 20");
+                    // Budget
+                    $budget_result = $conn->query("SELECT created_at as date, 'Budget' as transaction_type, allocated as amount, category as type, 'Budget' as account, spent as expenses, allocated as income, allocated as budgeting, CONCAT('Allocated: $', allocated, ' | Spent: $', spent, ' | Remaining: $', remaining) as remarks FROM budget ORDER BY created_at DESC LIMIT 20");
                     $all_finance_data = [];
-                    
-                    // Debug: Check if we can connect to database
-                    if (!$conn) {
-                        echo "<!-- Database connection failed -->";
-                    } else {
-                        echo "<!-- Database connected successfully -->";
-                    }
-                    
-                    // Get expenses data
-                    $expenses_query = "SELECT date, 'Expense' as transaction_type, amount, category as type, 'Expenses' as account, amount as expenses, 0 as income, 0 as budgeting, description as remarks FROM expenses ORDER BY date DESC LIMIT 20";
-                    $expenses_result = $conn->query($expenses_query);
-                    if ($expenses_result && $expenses_result->num_rows > 0) {
-                        echo "<!-- Found " . $expenses_result->num_rows . " expenses records -->";
-                        while ($row = $expenses_result->fetch_assoc()) {
-                            $all_finance_data[] = $row;
-                        }
-                    } else {
-                        echo "<!-- No expenses data found. Error: " . ($conn->error ?: 'No rows') . " -->";
-                    }
-                    
-                    // Get income data
-                    $income_query = "SELECT date, 'Income' as transaction_type, amount, source as type, 'Income' as account, 0 as expenses, amount as income, 0 as budgeting, description as remarks FROM income ORDER BY date DESC LIMIT 20";
-                    $income_result = $conn->query($income_query);
-                    if ($income_result && $income_result->num_rows > 0) {
-                        echo "<!-- Found " . $income_result->num_rows . " income records -->";
-                        while ($row = $income_result->fetch_assoc()) {
-                            $all_finance_data[] = $row;
-                        }
-                    } else {
-                        echo "<!-- No income data found. Error: " . ($conn->error ?: 'No rows') . " -->";
-                    }
-                    
-                    // Get budget data
-                    $budget_query = "SELECT created_at as date, 'Budget' as transaction_type, allocated as amount, category as type, 'Budget' as account, spent as expenses, allocated as income, allocated as budgeting, CONCAT('Allocated: $', allocated, ' | Spent: $', spent, ' | Remaining: $', remaining) as remarks FROM budget ORDER BY created_at DESC LIMIT 20";
-                    $budget_result = $conn->query($budget_query);
-                    if ($budget_result && $budget_result->num_rows > 0) {
-                        echo "<!-- Found " . $budget_result->num_rows . " budget records -->";
-                        while ($row = $budget_result->fetch_assoc()) {
-                            $all_finance_data[] = $row;
-                        }
-                    } else {
-                        echo "<!-- No budget data found. Error: " . ($conn->error ?: 'No rows') . " -->";
-                    }
-                    
-                    echo "<!-- Total finance records collected: " . count($all_finance_data) . " -->";
-                    
-                    // Sort all data by date (newest first)
-                    usort(
-                        $all_finance_data,
-                        function ($a, $b) {
-                            return strtotime($b['date']) - strtotime($a['date']);
-                        }
-                    );
-                    
-                    // Limit to 50 total records
+                    if ($expenses_result) while ($row = $expenses_result->fetch_assoc()) $all_finance_data[] = $row;
+                    if ($income_result) while ($row = $income_result->fetch_assoc()) $all_finance_data[] = $row;
+                    if ($budget_result) while ($row = $budget_result->fetch_assoc()) $all_finance_data[] = $row;
+                    usort($all_finance_data, function($a, $b) { return strtotime($b['date']) - strtotime($a['date']); });
                     $all_finance_data = array_slice($all_finance_data, 0, 50);
                     ?>
                     <?php if (!empty($all_finance_data)): ?>
                         <?php foreach ($all_finance_data as $fin): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($fin['date']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['transaction_type']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['amount']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['type']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['account']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['expenses']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['income']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['budgeting']); ?></td>
-                            <td><?php echo htmlspecialchars($fin['remarks']); ?></td>
+                            <td><?= htmlspecialchars($fin['date']) ?></td>
+                            <td><?= htmlspecialchars($fin['transaction_type']) ?></td>
+                            <td><?= htmlspecialchars($fin['amount']) ?></td>
+                            <td><?= htmlspecialchars($fin['type']) ?></td>
+                            <td><?= htmlspecialchars($fin['account']) ?></td>
+                            <td><?= htmlspecialchars($fin['expenses']) ?></td>
+                            <td><?= htmlspecialchars($fin['income']) ?></td>
+                            <td><?= htmlspecialchars($fin['budgeting']) ?></td>
+                            <td><?= htmlspecialchars($fin['remarks']) ?></td>
                         </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -562,8 +427,9 @@ $role = htmlspecialchars($_SESSION['role']);
             </table>
         </div>
     </div>
-                    <div id="historyHRSection" style="display:none;">
-                    <h3>Human Resources Report</h3>
+    <!-- Human Resources Report Section -->
+    <div id="historyHRSection" style="display:none;">
+        <h3>Human Resources Report</h3>
         <div class="report-table">
             <table>
                 <thead>
@@ -577,30 +443,25 @@ $role = htmlspecialchars($_SESSION['role']);
                 </thead>
                 <tbody>
                     <?php
-                    $hrs = [];
                     $result_hrs = $conn->query("SELECT name, position, department, status, last_action FROM hr_history ORDER BY last_action DESC LIMIT 50");
-                    if ($result_hrs && $result_hrs->num_rows > 0) {
-                        while ($row = $result_hrs->fetch_assoc()) {
-                            $hrs[] = $row;
-                        }
-                    }
+                    if ($result_hrs && $result_hrs->num_rows > 0):
+                        while ($hr = $result_hrs->fetch_assoc()):
                     ?>
-                    <?php if (!empty($hrs)): ?>
-                        <?php foreach ($hrs as $hr): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($hr['name']); ?></td>
-                            <td><?php echo htmlspecialchars($hr['position']); ?></td>
-                            <td><?php echo htmlspecialchars($hr['department']); ?></td>
-                            <td><?php echo htmlspecialchars($hr['last_action']); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr><td colspan="5" style="text-align:center;">No Human Resources records found.</td></tr>
+                    <tr>
+                        <td><?= htmlspecialchars($hr['name']) ?></td>
+                        <td><?= htmlspecialchars($hr['position']) ?></td>
+                        <td><?= htmlspecialchars($hr['department']) ?></td>
+                        <td><?= htmlspecialchars($hr['status']) ?></td>
+                        <td><?= htmlspecialchars($hr['last_action']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="5" style="text-align:center;">No Human Resources records found.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
+    <!-- Inventory History Section -->
     <div id="historyInventorySection" style="display:none;">
         <h3>Inventory Report</h3>
         <div class="report-table">
@@ -616,31 +477,25 @@ $role = htmlspecialchars($_SESSION['role']);
                 </thead>
                 <tbody>
                     <?php
-                    $inventory = [];
                     $result_inv = $conn->query("SELECT product_name, stock, stock_in, stock_out, status FROM inventory_history ORDER BY product_name ASC LIMIT 50");
-                    if ($result_inv && $result_inv->num_rows > 0) {
-                        while ($row = $result_inv->fetch_assoc()) {
-                            $inventory[] = $row;
-                        }
-                    }
+                    if ($result_inv && $result_inv->num_rows > 0):
+                        while ($inv = $result_inv->fetch_assoc()):
                     ?>
-                    <?php if (!empty($inventory)): ?>
-                        <?php foreach ($inventory as $inv): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($inv['product_name']); ?></td>
-                            <td><?php echo htmlspecialchars($inv['stock']); ?></td>
-                            <td><?php echo htmlspecialchars($inv['stock_in']); ?></td>
-                            <td><?php echo htmlspecialchars($inv['stock_out']); ?></td>
-                            <td><?php echo htmlspecialchars($inv['status']); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr><td colspan="5" style="text-align:center;">No inventory records found.</td></tr>
+                    <tr>
+                        <td><?= htmlspecialchars($inv['product_name']) ?></td>
+                        <td><?= htmlspecialchars($inv['stock']) ?></td>
+                        <td><?= htmlspecialchars($inv['stock_in']) ?></td>
+                        <td><?= htmlspecialchars($inv['stock_out']) ?></td>
+                        <td><?= htmlspecialchars($inv['status']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="5" style="text-align:center;">No inventory records found.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
+    <!-- Customer Feedback History Section -->
     <div id="historyFeedbackSection" style="display:none;">
         <h3>Customer Feedback History</h3>
         <div class="report-table">
@@ -658,34 +513,27 @@ $role = htmlspecialchars($_SESSION['role']);
                 </thead>
                 <tbody>
                     <?php
-                    $feedback_history = [];
                     $result_fb_hist = $conn->query("SELECT date, customer_name, email, feedback, rating, status, action FROM customer_feedback_history ORDER BY date DESC LIMIT 50");
-                    if ($result_fb_hist && $result_fb_hist->num_rows > 0) {
-                        while ($row = $result_fb_hist->fetch_assoc()) {
-                            $feedback_history[] = $row;
-                        }
-                    }
+                    if ($result_fb_hist && $result_fb_hist->num_rows > 0):
+                        while ($fh = $result_fb_hist->fetch_assoc()):
                     ?>
-                    <?php if (!empty($feedback_history)): ?>
-                        <?php foreach ($feedback_history as $fh): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($fh['date']); ?></td>
-                            <td><?php echo htmlspecialchars($fh['customer_name']); ?></td>
-                            <td><?php echo htmlspecialchars($fh['email']); ?></td>
-                            <td><?php echo htmlspecialchars($fh['feedback']); ?></td>
-                            <td><?php echo htmlspecialchars($fh['rating']); ?></td>
-                            <td><?php echo htmlspecialchars($fh['status']); ?></td>
-                            <td><?php echo htmlspecialchars($fh['action']); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr><td colspan="7" style="text-align:center;">No feedback history records found.</td></tr>
+                    <tr>
+                        <td><?= htmlspecialchars($fh['date']) ?></td>
+                        <td><?= htmlspecialchars($fh['customer_name']) ?></td>
+                        <td><?= htmlspecialchars($fh['email']) ?></td>
+                        <td><?= htmlspecialchars($fh['feedback']) ?></td>
+                        <td><?= htmlspecialchars($fh['rating']) ?></td>
+                        <td><?= htmlspecialchars($fh['status']) ?></td>
+                        <td><?= htmlspecialchars($fh['action']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="7" style="text-align:center;">No feedback history records found.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
-                </div>
+</div>
             </div>
         </div>
     </div>
