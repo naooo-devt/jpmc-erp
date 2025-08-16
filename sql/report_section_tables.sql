@@ -1,12 +1,12 @@
 -- Table for Inventory Transactions (for Transaction Log, Monthly Summary, Low Stock)
 CREATE TABLE IF NOT EXISTS transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    date DATETIME NOT NULL,
+    `date` DATETIME NOT NULL,
     transaction_id VARCHAR(50) NOT NULL,
-    type ENUM('IN', 'OUT') NOT NULL,
+    `type` ENUM('IN', 'OUT') NOT NULL,
     product VARCHAR(255) NOT NULL,
     quantity INT NOT NULL,
-    user VARCHAR(100),
+    `user` VARCHAR(100),
     remarks VARCHAR(255)
 );
 
