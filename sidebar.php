@@ -59,7 +59,7 @@ $userRole = isset($_SESSION['role']) ? $_SESSION['role'] : 'employee'; // defaul
             </a>
             <a href="customer_service.php" class="menu-item <?= ($currentPage == 'customer_service.php') ? 'active' : '' ?>">
                 <i class="fas fa-headset"></i>
-                <span>Customer Service</span>
+                <span>Customer Related Management</span>
             </a>
             <a href="reports.php" class="menu-item <?= ($currentPage == 'reports.php') ? 'active' : '' ?>">
                 <i class="fas fa-chart-bar"></i>
@@ -171,3 +171,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 });
 </script>
+
