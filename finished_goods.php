@@ -1,608 +1,1121 @@
-<style>
-    .suggested-question {
-        padding: 15px 20px;
-        border-radius: 30px;
-        background: #eef2ff;
-        color: #4338ca;
-        border: 1px solid #c7d2fe;
-        font-size: 0.9rem;
-        font-weight: 500;
-        white-space: nowrap;
-        cursor: pointer;
-        transition: background 0.3s ease, transform 0.2s ease;
-    }
+<?php
+session_start();
+if (!isset($_SESSION['loggedin'])) {
+    header('Location: login.php');
+    exit;
+}
+require_once 'db_connect.php';
 
-    .suggested-question:hover {
-        background: #c7d2fe;
-        transform: scale(1.05);
-    }
-</style>
+// Fetch user details from session for display.
+$username = htmlspecialchars($_SESSION['username']);
+$role = htmlspecialchars($_SESSION['role']);
 
-<!-- Floating Chat Toggle Button -->
-<div id="chat-toggle-btn" style="
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 75px;
-    height: 75px;
-    background: linear-gradient(135deg, #1e40af 60%, #2563eb 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    z-index: 9999;
-">
-    <i class="fas fa-headset" style="color: white; font-size: 24px;"></i>
-</div>
+// Sample employee data - in a real application, this would come from the database
+$employees = [
+    [
+        'id' => 'JPMC-HRD-025',
+        'name' => 'ROBIN NOMBRANDO',
+        'position' => 'PROCESS ENGINEER',
+        'department' => 'Engineering',
+        'date_hired' => '2022-03-01',
+        'employment_type' => 'Regular',
+        'status' => 'Active',
+        'contact' => '09171234567',
+        'email' => 'robin.nombrando@company.com'
+    ],
+    [
+        'id' => 'JPMC-HRD-026',
+        'name' => 'JONATHAN RAY Y. ANTIONIO',
+        'position' => 'QA SUPERVISOR',
+        'department' => 'Quality Assurance',
+        'date_hired' => '2021-06-15',
+        'employment_type' => 'Regular',
+        'status' => 'Active',
+        'contact' => '09181234567',
+        'email' => 'jonathan.antonio@company.com'
+    ],
+    [
+        'id' => 'JPMC-HRD-027',
+        'name' => 'ALBERT B. ALACAPA',
+        'position' => 'WAREHOUSEMAN',
+        'department' => 'Warehouse',
+        'date_hired' => '2023-01-10',
+        'employment_type' => 'Probationary',
+        'status' => 'Active',
+        'contact' => '09191234567',
+        'email' => 'albert.alacapa@company.com'
+    ],
+    [
+        'id' => 'JPMC-HRD-028',
+        'name' => 'MARDY AGUILAR',
+        'position' => 'MOLD FABRICATOR',
+        'department' => 'Production',
+        'date_hired' => '2022-11-05',
+        'employment_type' => 'Regular',
+        'status' => 'Active',
+        'contact' => '09201234567',
+        'email' => 'mardy.aguilar@company.com'
+    ],
+    [
+        'id' => 'JPMC-HRD-029',
+        'name' => 'JOHN BRYAN FERRER',
+        'position' => 'IT SUPERVISOR',
+        'department' => 'IT Department',
+        'date_hired' => '2020-02-20',
+        'employment_type' => 'Regular',
+        'status' => 'Active',
+        'contact' => '09211234567',
+        'email' => 'john.ferrer@company.com'
+    ],
+    [
+        'id' => 'JPMC-HRD-030',
+        'name' => 'ANABEL E. PANUNCIAR',
+        'position' => 'MACHINE OPERATOR',
+        'department' => 'Production',
+        'date_hired' => '2023-03-15',
+        'employment_type' => 'Probationary',
+        'status' => 'Active',
+        'contact' => '09221234567',
+        'email' => 'anabel.panunciar@company.com'
+    ],
+    [
+        'id' => 'JPMC-HRD-031',
+        'name' => 'RICKY V. TONGOL',
+        'position' => 'QUALITY CONTROL',
+        'department' => 'Quality Assurance',
+        'date_hired' => '2021-08-25',
+        'employment_type' => 'Regular',
+        'status' => 'Active',
+        'contact' => '09231234567',
+        'email' => 'ricky.tongol@company.com'
+    ]
+];
 
-<!-- Chat Panel -->
-<div id="chat-tab" style="
-    display: none;
-    position: fixed;
-    bottom: 100px;
-    right: 24px;
-    width: 400px;
-    max-height: 80vh;
-    height: 700px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    z-index: 9998;
-    overflow: hidden;
-    flex-direction: column;
-">
+// Sample recruitment data
+$applicants = [
+    [
+        'id' => 'APP-001',
+        'name' => 'MARIA SANTOS',
+        'position_applied' => 'QA SUPERVISOR',
+        'date_applied' => '2024-06-01',
+        'status' => 'Screening',
+        'contact' => '09181234567',
+        'email' => 'maria.santos@gmail.com',
+        'resume' => '#',
+        'assigned_hr' => 'JONATHAN RAY Y. ANTIONIO'
+    ],
+    [
+        'id' => 'APP-002',
+        'name' => 'JUAN DELA CRUZ',
+        'position_applied' => 'PROCESS ENGINEER',
+        'date_applied' => '2024-06-05',
+        'status' => 'Interview',
+        'contact' => '09191234567',
+        'email' => 'juan.delacruz@gmail.com',
+        'resume' => '#',
+        'assigned_hr' => 'ROBIN NOMBRANDO'
+    ]
+];
 
+// Sample HR functions data
+$hr_functions = [
+    [
+        'employee_id' => 'JPMC-HRD-025',
+        'name' => 'ROBIN NOMBRANDO',
+        'leave_type' => 'Sick Leave',
+        'date_filed' => '2024-05-20',
+        'leave_duration' => '2024-05-21 to 2024-05-23',
+        'status' => 'Approved',
+        'benefit_type' => 'Health',
+        'benefit_start' => '2024-06-01',
+        'remarks' => 'Medical certificate provided'
+    ],
+    [
+        'employee_id' => 'JPMC-HRD-026',
+        'name' => 'JONATHAN RAY Y. ANTIONIO',
+        'leave_type' => 'Vacation Leave',
+        'date_filed' => '2024-05-15',
+        'leave_duration' => '2024-05-16 to 2024-05-18',
+        'status' => 'Pending',
+        'benefit_type' => 'Paid Time Off',
+        'benefit_start' => '2024-06-10',
+        'remarks' => 'N/A'
+    ]
+];
+?>
+<!DOCTYPE html>
+<html lang="en">
 
-    <!-- Chat Header -->
-    <div class="bot-info" style="padding: 16px 20px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="bot-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">P</div>
-            <span style="font-weight: 600; color: #495057;">PolyBot</span>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Administration - James Polymer ERP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="icon" href="images/logo.png">
+    <style>
+        /* System Administration Styles */
+        .system-admin-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .system-admin-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light-gray);
+        }
+
+        .system-admin-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark-gray);
+        }
+
+        .system-admin-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .employee-table {
+            width: 1800px;
+            border-collapse: collapse;
+            background: var(--white);
+        }
+
+        .employee-table th {
+            background: var(--light-gray);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark-gray);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .employee-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--dark-gray);
+            vertical-align: middle;
+        }
+
+        .employee-table tr:hover {
+            background: var(--light-gray);
+        }
+
+        .employee-id {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+
+        .employee-name {
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .employee-position {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .employee-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .employee-status.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .employee-status.inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .employee-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: var(--light-gray);
+            color: var(--gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-blue);
+            color: var(--white);
+            transform: scale(1.1);
+        }
+
+        .action-btn.view {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-blue);
+        }
+
+        .action-btn.edit {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .action-btn.delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .action-btn.view:hover {
+            background: var(--primary-blue);
+            color: var(--white);
+        }
+
+        .action-btn.edit:hover {
+            background: var(--warning);
+            color: var(--white);
+        }
+
+        .action-btn.delete:hover {
+            background: var(--error);
+            color: var(--white);
+        }
+
+        .last-login {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        /* Filter and Search Styles */
+        .filter-section {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--white);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .filter-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: var(--white);
+            color: var(--dark-gray);
+            min-width: 150px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* Category Buttons */
+        .category-buttons {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .category-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--light-gray);
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 1rem;
+        }
+
+        .category-btn.active {
+            background: var(--primary-blue);
+            color: var(--white);
+        }
+
+        .category-section {
+            display: none;
+        }
+
+        .category-section.active {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .system-admin-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .system-admin-actions {
+                justify-content: center;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                justify-content: space-between;
+            }
+
+            .employee-table {
+                font-size: 0.75rem;
+            }
+
+            .employee-table th,
+            .employee-table td {
+                padding: 0.5rem;
+            }
+
+            .employee-actions {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .action-btn {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        /* Table Scroll */
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: unset;
+            scrollbar-width: thin;
+            scrollbar-color: var(--gray) var(--light-gray);
+        }
+
+        .table-scroll-x {
+            overflow-x: auto;
+            width: 100%;
+            display: block;
+        }
+
+        .employee-table {
+            width: 1800px;
+            border-collapse: collapse;
+            background: var(--white);
+        }
+
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: var(--light-gray);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--gray);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-gray);
+        }
+
+        /* Leave Type Dropdown */
+        .leave-type-dropdown {
+            width: 100%;
+            padding: 0.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background: var(--white);
+            color: var(--dark-gray);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <?php include 'sidebar.php'; ?>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <i class="fas fa-cog" style="font-size: 1.5rem; color: var(--dark-blue);"></i>
+                <h1 class="header-title">System Administration</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-profile">
+                    <i class="fas fa-user-shield"></i>
+                    <span><?php echo ucfirst($role); ?></span>
+                </div>
+            </div>
         </div>
-        <button id="clearHistoryBtn" disabled style="background: transparent; border: none; padding: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; opacity: 0;"></button>
-        <i class="fas fa-info-circle" style="color: #6c757d; cursor: pointer; font-size: 1.1rem;"></i>
-    </div>
+        <div class="content">
+            <div class="system-admin-container">
+                <div class="category-buttons">
+                    <button class="category-btn active" id="btnEmployee">Employee Management</button>
+                    <button class="category-btn" id="btnRecruitment">Recruitment Management</button>
+                    <button class="category-btn" id="btnHRFunctions">HR Functions</button>
+                    <button class="category-btn" id="btnActivityLog">Activity Log</button>
+                </div>
+                <!-- Employee Management Section -->
+                <div class="category-section active" id="sectionEmployee">
+                    <div class="system-admin-header">
+                        <div class="system-admin-title">Employee Management</div>
+                        <div class="system-admin-actions">
+                            <button class="btn btn-outline" id="exportBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
+                            </button>
+                            <button class="btn btn-primary" id="addEmployeeBtn">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Employee</span>
+                            </button>
+                        </div>
+                    </div>
 
-    <!-- Scrollable Message Content -->
-    <div class="chat-messages" id="chat-content" style="
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        background: white;
-    ">
-        <div class="message bot-message" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
-            <div class="message-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">P</div>
-            <div class="message-bubble" style="background: #f8f9fa; padding: 12px 16px; border-radius: 18px; max-width: 70%; color: #495057;">Hello! I am Poly, your chat bot assistant from JPMC.</div>
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Search:</label>
+                                <input type="text" class="filter-input search-box" id="employeeSearch"
+                                    placeholder="Search employees...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Position:</label>
+                                <select class="filter-input" id="positionFilter">
+                                    <option value="">All Positions</option>
+                                    <option value="PROCESS ENGINEER">Process Engineer</option>
+                                    <option value="QA SUPERVISOR">QA Supervisor</option>
+                                    <option value="WAREHOUSEMAN">Warehouseman</option>
+                                    <option value="MOLD FABRICATOR">Mold Fabricator</option>
+                                    <option value="IT SUPERVISOR">IT Supervisor</option>
+                                    <option value="MACHINE OPERATOR">Machine Operator</option>
+                                    <option value="QUALITY CONTROL">Quality Control</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status:</label>
+                                <select class="filter-input" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-outline" id="clearFilters">
+                                    <i class="fas fa-times"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-scroll-x">
+                            <table class="employee-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Position/Job Title</th>
+                                        <th>Department</th>
+                                        <th>Date Hired</th>
+                                        <th>Employment Type</th>
+                                        <th>Status</th>
+                                        <th>Contact Number</th>
+                                        <th>Email Address</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($employees as $employee): ?>
+                                        <tr data-employee-id="<?php echo $employee['id']; ?>">
+                                            <td><span class="employee-id"><?php echo htmlspecialchars($employee['id']); ?></span></td>
+                                            <td><span class="employee-name"><?php echo htmlspecialchars($employee['name']); ?></span></td>
+                                            <td><span class="employee-position"><?php echo htmlspecialchars($employee['position']); ?></span></td>
+                                            <td><?php echo htmlspecialchars($employee['department']); ?></td>
+                                            <td><?php echo htmlspecialchars($employee['date_hired']); ?></td>
+                                            <td><?php echo htmlspecialchars($employee['employment_type']); ?></td>
+                                            <td>
+                                                <span class="employee-status <?php echo strtolower($employee['status']); ?>">
+                                                    <?php echo $employee['status']; ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($employee['contact']); ?></td>
+                                            <td><?php echo htmlspecialchars($employee['email']); ?></td>
+                                            <td>
+                                                <div class="employee-actions">
+                                                    <button class="action-btn view" data-id="<?php echo $employee['id']; ?>"
+                                                        title="View Profile">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $employee['id']; ?>"
+                                                        title="Edit Employee">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $employee['id']; ?>"
+                                                        data-name="<?php echo htmlspecialchars($employee['name']); ?>"
+                                                        title="Delete Employee">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recruitment Management Section -->
+                <div class="category-section" id="sectionRecruitment">
+                    <div class="system-admin-header">
+                        <div class="system-admin-title">Recruitment Management</div>
+                        <div class="system-admin-actions">
+                            <button class="btn btn-outline" id="exportRecruitmentBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
+                            </button>
+                            <button class="btn btn-primary" id="addApplicantBtn">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Applicant</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Search:</label>
+                                <input type="text" class="filter-input search-box" id="applicantSearch" placeholder="Search applicants...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status:</label>
+                                <select class="filter-input" id="applicantStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Screening">Screening</option>
+                                    <option value="Interview">Interview</option>
+                                    <option value="Hired">Hired</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-outline" id="clearApplicantFilters">
+                                    <i class="fas fa-times"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <div class="table-scroll-x">
+                            <table class="employee-table">
+                                <thead>
+                                    <tr>
+                                        <th>Applicant ID</th>
+                                        <th>Full Name</th>
+                                        <th>Position Applied</th>
+                                        <th>Date Applied</th>
+                                        <th>Application Status</th>
+                                        <th>Contact Number</th>
+                                        <th>Email Address</th>
+                                        <th>Resume/CV</th>
+                                        <th>Assigned HR</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($applicants as $applicant): ?>
+                                        <tr data-applicant-id="<?php echo $applicant['id']; ?>">
+                                            <td><?php echo htmlspecialchars($applicant['id']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['name']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['position_applied']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['date_applied']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['status']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['contact']); ?></td>
+                                            <td><?php echo htmlspecialchars($applicant['email']); ?></td>
+                                            <td>
+                                                <a href="<?php echo $applicant['resume']; ?>" target="_blank" class="action-btn view" title="View Resume">
+                                                    <i class="fas fa-file"></i>
+                                                </a>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($applicant['assigned_hr']); ?></td>
+                                            <td>
+                                                <div class="employee-actions">
+                                                    <button class="action-btn view" data-id="<?php echo $applicant['id']; ?>" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Edit Applicant">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $applicant['id']; ?>" data-name="<?php echo htmlspecialchars($applicant['name']); ?>" title="Delete Applicant">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Update Status">
+                                                        <i class="fas fa-sync"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Schedule Interview">
+                                                        <i class="fas fa-calendar"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- HR Functions Section -->
+                <div class="category-section" id="sectionHRFunctions">
+                    <div class="system-admin-header">
+                        <div class="system-admin-title">HR Functions</div>
+                        <div class="system-admin-actions">
+                            <button class="btn btn-outline" id="exportHRBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Search:</label>
+                                <input type="text" class="filter-input search-box" id="hrSearch" placeholder="Search HR functions...">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Status:</label>
+                                <select class="filter-input" id="hrStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Denied">Denied</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-outline" id="clearHRFilters">
+                                    <i class="fas fa-times"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <div class="table-scroll-x">
+                            <table class="employee-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Leave Type</th>
+                                        <th>Date Filed</th>
+                                        <th>Leave Duration</th>
+                                        <th>Status</th>
+                                        <th>Benefit Type</th>
+                                        <th>Benefit Start Date</th>
+                                        <th>Remarks</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($hr_functions as $hr): ?>
+                                        <tr data-employee-id="<?php echo $hr['employee_id']; ?>">
+                                            <td><?php echo htmlspecialchars($hr['employee_id']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['name']); ?></td>
+                                            <td>
+                                                <select class="leave-type-dropdown" onchange="updateLeaveType(this, '<?php echo $hr['employee_id']; ?>')">
+                                                    <option value="Sick Leave" <?php echo $hr['leave_type'] == 'Sick Leave' ? 'selected' : ''; ?>>Sick Leave</option>
+                                                    <option value="Vacation Leave" <?php echo $hr['leave_type'] == 'Vacation Leave' ? 'selected' : ''; ?>>Vacation Leave</option>
+                                                    <option value="Maternity Leave" <?php echo $hr['leave_type'] == 'Maternity Leave' ? 'selected' : ''; ?>>Maternity Leave</option>
+                                                    <option value="Paternity Leave" <?php echo $hr['leave_type'] == 'Paternity Leave' ? 'selected' : ''; ?>>Paternity Leave</option>
+                                                    <option value="Bereavement Leave" <?php echo $hr['leave_type'] == 'Bereavement Leave' ? 'selected' : ''; ?>>Bereavement Leave</option>
+                                                    <option value="Emergency Leave" <?php echo $hr['leave_type'] == 'Emergency Leave' ? 'selected' : ''; ?>>Emergency Leave</option>
+                                                    <option value="Personal Leave" <?php echo $hr['leave_type'] == 'Personal Leave' ? 'selected' : ''; ?>>Personal Leave</option>
+                                                    <option value="Unpaid Leave" <?php echo $hr['leave_type'] == 'Unpaid Leave' ? 'selected' : ''; ?>>Unpaid Leave</option>
+                                                </select>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($hr['date_filed']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['leave_duration']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['status']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['benefit_type']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['benefit_start']); ?></td>
+                                            <td><?php echo htmlspecialchars($hr['remarks']); ?></td>
+                                            <td>
+                                                <div class="employee-actions">
+                                                    <button class="action-btn edit" data-id="<?php echo $hr['employee_id']; ?>" title="Edit HR Function">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $hr['employee_id']; ?>" data-name="<?php echo htmlspecialchars($hr['name']); ?>" title="Delete HR Function">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <button class="action-btn edit" data-id="<?php echo $hr['employee_id']; ?>" title="Approve">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button class="action-btn delete" data-id="<?php echo $hr['employee_id']; ?>" title="Deny">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                    <button class="action-btn view" data-id="<?php echo $hr['employee_id']; ?>" title="View Request">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Activity Log Section -->
+                <div class="category-section" id="sectionActivityLog" style="display:none;">
+                    <div class="system-admin-header">
+                        <div class="system-admin-title">System Activity Log</div>
+                        <div class="system-admin-actions">
+                            <button class="btn btn-outline" id="exportActivityLogBtn">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <div class="table-scroll-x">
+                            <table class="employee-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User ID</th>
+                                        <th>Username</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                        <th>IP Address</th>
+                                        <th>Date/Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Example static row, replace with PHP fetching from DB -->
+                                    <tr>
+                                        <td>1</td>
+                                        <td>101</td>
+                                        <td>admin</td>
+                                        <td>Login</td>
+                                        <td>User logged in</td>
+                                        <td>192.168.1.10</td>
+                                        <td>2024-06-10 09:15:00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="polybot-info-panel" style="
-        display: none;
-        position: fixed;
-        top: 31%;
-        left: 80.55555%;
-        transform: translate(-50%, -50%);
-        width: 400px;
-        max-width: 90%;
-        background: white;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        padding: 20px;
-        border-radius: 10px;
-        z-index: 9999;
-    ">
-        <h3 style="margin-top: 0; color: #495057;">About PolyBot</h3>
-        <p style="font-size: 0.9rem; color: #6c757d;">
-            PolyBot is your virtual assistant from James Polymer Manufacturing Corp. It helps you navigate the system, get quick answers to FAQs, and assist with tasks like inventory, HR, and more.
-        </p>
-        <p style="font-size: 0.9rem; color: #6c757d;">
-            Just type a message or click a suggested question to get started!
-        </p>
-    </div>
+    <script src="assets/js/script.js"></script>
+    <script>
+        // Initialize sidebar functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const supplyChainDropdown = document.getElementById('supplyChainDropdown');
+            const supplyChainDropdownMenu = document.getElementById('supplyChainDropdownMenu');
 
-
-    <!-- Suggested Questions -->
-    <div id="suggested-questions" style="overflow-x: auto; white-space: nowrap; padding: 10px; border-top: 1px solid #e9ecef; background: #fff;">
-        <div style="display: inline-flex; gap: 10px;">
-            <button class="suggested-question">What are your business hours?</button>
-            <button class="suggested-question">How can I place an order?</button>
-            <button class="suggested-question">Where is your company located?</button>
-            <button class="suggested-question">Do you offer bulk discounts?</button>
-            <button class="suggested-question">What are your delivery times?</button>
-            <button class="suggested-question">Can I request a product demo?</button>
-        </div>
-    </div>
-
-    <!-- Input Field -->
-    <div class="message-input-container" style="padding: 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="text" class="message-input" placeholder="Enter a message" style="flex: 1; padding: 12px 16px; border: 2px solid #e9ecef; border-radius: 25px;">
-            <button class="send-btn" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white;">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Toggle Script -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const chatToggleBtn = document.getElementById('chat-toggle-btn');
-        const chatTab = document.getElementById('chat-tab');
-
-        // Toggle chat when clicking the button
-        chatToggleBtn.addEventListener('click', function (e) {
-            e.stopPropagation(); // Prevent document click from triggering
-            const isVisible = window.getComputedStyle(chatTab).display !== 'none';
-            chatTab.style.display = isVisible ? 'none' : 'flex';
-        });
-
-        // Close chat when clicking outside
-        document.addEventListener('click', function (e) {
-            const isClickInsideChat = chatTab.contains(e.target);
-            const isClickOnButton = chatToggleBtn.contains(e.target);
-            const isVisible = window.getComputedStyle(chatTab).display !== 'none';
-
-            if (!isClickInsideChat && !isClickOnButton && isVisible) {
-                chatTab.style.display = 'none';
-            }
-        });
-    });
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Tab switching functionality
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const chatContent = document.getElementById('chat-content');
-    const connectContent = document.getElementById('connect-content');
-    const faqsContent = document.getElementById('faqs-content');
-    const messageInputContainer = document.querySelector('.message-input-container');
-    const infoIcon = document.querySelector('.fa-info-circle');
-    const infoPanel = document.getElementById('polybot-info-panel');
-
-    // Toggle panel visibility when icon is clicked
-    infoIcon.addEventListener('click', function (e) {
-    e.stopPropagation(); // Prevent triggering the window click
-    infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
-            });
-
-    // Close panel when clicking outside
-    document.addEventListener('click', function () {
-    infoPanel.style.display = 'none';
-            });
-
-    // Prevent panel from closing when clicking inside it
-    infoPanel.addEventListener('click', function (e) {
-    e.stopPropagation();
+            // Mobile menu toggle
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', function () {
+                    sidebar.classList.toggle('active');
                 });
-
-    
-    tabBtns.forEach((btn, index) => {
-        btn.addEventListener('click', function() {
-            // Remove active class from all tabs
-            tabBtns.forEach(tab => {
-                tab.classList.remove('active');
-                tab.style.background = 'transparent';
-                tab.style.color = '#6c757d';
-                tab.style.borderBottom = 'none';
-            });
-            
-            // Add active class to clicked tab
-            this.classList.add('active');
-            this.style.background = 'white';
-            this.style.color = '#667eea';
-            this.style.borderBottom = '3px solid #667eea';
-            
-            // Show appropriate content based on tab index
-            if (index === 0) { // Chat with us!
-                chatContent.style.display = 'block';
-                connectContent.style.display = 'none';
-                faqsContent.style.display = 'none';
-                messageInputContainer.style.display = 'block';
-            } else if (index === 1) { // Connect with us!
-                chatContent.style.display = 'none';
-                connectContent.style.display = 'block';
-                faqsContent.style.display = 'none';
-                messageInputContainer.style.display = 'none';
-            } else if (index === 2) { // FAQs
-                chatContent.style.display = 'none';
-                connectContent.style.display = 'none';
-                faqsContent.style.display = 'block';
-                messageInputContainer.style.display = 'none';
             }
-        });
-    });
 
-    // AI PolyBot Knowledge Base with Predefined Q&A
-    const polyBotKnowledge = {
-        // Greetings and Basic Responses
-        greetings: {
-            patterns: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
-            responses: [
-                "Hi there! 👋 I'm Poly, your AI assistant from James Polymer Manufacturing Corporation. How can I help you today?",
-                "Hello! 😊 Welcome to JPMC. I'm Poly, ready to assist you with any questions about our products and services.",
-                "Hey! 👋 I'm Poly from James Polymer. How can I help you today?",
-                "Hi! 😄 Welcome! What would you like to know about our company?",
-                "Hello there! 👋 How are you doing today? I'm Poly, your AI assistant."
-            ]
-        },
-        
-        // Company Information
-        company_info: {
-            patterns: [ 'about', 'jpmc', 'what is', 'tell me about', 'who are you', 'what does', 'what do'],
-            responses: [
-                "James Polymer Manufacturing Corporation (JPMC) is a polymer manufacturing and plastic products company established in the Philippines. Our mission is to provide high-quality polymer solutions and innovative plastic products. We aim to be a leading manufacturer in the polymer industry.",
-                "We are James Polymer Manufacturing Corporation, specializing in polymer manufacturing and plastic products. We're committed to providing high-quality solutions and innovative products to our customers.",
-                "JPMC is a Philippine-based company focused on polymer manufacturing. We provide high-quality polymer solutions and innovative plastic products for various industries."
-            ]
-        },
-        
-        // Products
-        products: {
-            patterns: ['product', 'material', 'abs', 'hips', 'pp', 'nylon', 'pvc', 'what do you make', 'materials'],
-            responses: [
-                "We manufacture various polymer materials including ABS (Acrylonitrile Butadiene Styrene), HIPS (High Impact Polystyrene), PP (Polypropylene), PS (Polystyrene), Nylon, and PVC. Our products are used in automotive parts, electronics, packaging, construction materials, and consumer goods. All products meet international quality standards.",
-                "Our product line includes ABS, HIPS, PP, PS, Nylon, and PVC materials. These are used in automotive, electronics, packaging, construction, and consumer goods industries. We maintain high quality standards across all products.",
-                "We produce polymer materials like ABS, HIPS, PP, PS, Nylon, and PVC. These materials serve automotive, electronics, packaging, construction, and consumer goods sectors with international quality standards."
-            ]
-        },
-        
-        // Contact Information
-        contact: {
-            patterns: ['contact', 'phone', 'email', 'address', 'location', 'hours', 'reach', 'location', 'located'],
-            responses: [
-                "You can contact us at jamespro.asia101@gmail.com or jamespro_asia@yahoo.com or call 09399359753. \nWe're located in the Philippines at 16 Aguinaldo Hi-Way, Panapaan II, Bacoor, Cavite. \nLandmark: Urban Generation. \nOur business hours are Monday to Friday, 8:00 AM - 5:00 PM.",
-            ]
-        },
-        
-        // Pricing
-        pricing: {
-            patterns: ['price', 'cost', 'how much', 'quote', 'pricing', 'rates'],
-            responses: [
-                "Pricing varies depending on the material type, quantity, and specifications. For accurate pricing, please contact our sales team with your specific requirements.",
-                "Our pricing depends on material type, quantity, and specifications. Please contact our sales team for detailed quotes based on your needs.",
-                "Pricing is customized based on material type, quantity, and specifications. Contact our sales team for accurate quotes tailored to your requirements."
-            ]
-        },
-        
-        // Services
-        services: {
-            patterns: ['service', 'offer', 'custom', 'manufacturing', 'consulting', 'support'],
-            responses: [
-                "We offer custom polymer manufacturing, material selection and technical support, local and international shipping, and 24/7 customer support and technical assistance.",
-                "Our services include custom polymer manufacturing, technical consulting, material selection support, shipping services, and round-the-clock customer support.",
-                "We provide custom manufacturing, technical consulting, material selection, shipping services, and 24/7 customer support for all your polymer needs."
-            ]
-        },
-        
-        // Delivery/Shipping
-        delivery: {
-            patterns: ['delivery', 'shipping', 'transport', 'when will', 'how long', 'shipping time'],
-            responses: [
-                "We offer local and international shipping. Standard delivery takes 3-5 business days for local orders. Express delivery is available for urgent orders.",
-                "Local delivery takes 3-5 business days, with express options available. We also provide international shipping services.",
-                "Standard local delivery is 3-5 business days. We offer express shipping for urgent orders and international shipping services."
-            ]
-        },
-        
-        // Quality
-        quality: {
-            patterns: ['quality', 'standard', 'certification', 'warranty', 'guarantee'],
-            responses: [
-                "All our products meet international quality standards. We provide standard warranty on all products and return policy for defective items.",
-                "We maintain international quality standards across all products. Standard warranty and return policies are available for customer protection.",
-                "Our products meet international quality standards with warranty coverage and return policies for customer satisfaction."
-            ]
-        },
-        
-        // Ordering
-        order: {
-            patterns: ['order', 'buy', 'purchase', 'place order', 'how to order', 'how do I order'],
-            responses: [
-                "You can place an order through our website or contact our sales team directly. We offer flexible payment terms for bulk orders.",
-                "Orders can be placed via our website or by contacting our sales team. We provide flexible payment options for bulk orders.",
-                "Place orders through our website or contact our sales team. We offer flexible payment terms, especially for bulk orders."
-            ]
-        },
-        
-        // Farewells
-        farewell: {
-            patterns: ['bye', 'goodbye', 'see you', 'thank you', 'thanks', 'end'],
-            responses: [
-                "You're very welcome! 😊 Have a great day, and feel free to return if you have more questions about James Polymer Manufacturing Corporation.",
-                "Thank you for chatting with me! 👋 Don't hesitate to reach out again for any polymer-related inquiries.",
-                "You're welcome! 😄 Have a wonderful day, and feel free to come back anytime for more information about JPMC.",
-                "Thanks for chatting! 👋 Feel free to return if you need any more assistance with our products or services.",
-                "You're very welcome! 😊 Have a great day ahead!"
-            ]
-        },
-        
-        // Default/Unknown
-        default: {
-            patterns: [],
-            responses: [
-                "I'm not sure I understand. Could you please rephrase your question? I can help you with information about our company, products, services, contact details, pricing, and more.",
-                "I didn't quite catch that. Could you try asking in a different way? I can assist with company info, products, services, contact details, and pricing.",
-                "I'm not sure about that. Could you please rephrase? I'm here to help with information about James Polymer Manufacturing Corporation."
-            ]
-        }
-    };
-
-    // Simple Code-Based PolyBot
-    class SimplePolyBot {
-        constructor() {
-            this.sessionId = this.generateSessionId();
-            this.loadFromLocalStorage();
-        }
-
-        generateSessionId() {
-            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        loadFromLocalStorage() {
-            try {
-                const history = localStorage.getItem('polybot_history');
-                this.conversationHistory = history ? JSON.parse(history) : [];
-                
-                const count = localStorage.getItem('polybot_interaction_count');
-                this.interactionCount = count ? parseInt(count) : 0;
-                
-                console.log('Loaded from localStorage:', {
-                    historyLength: this.conversationHistory.length,
-                    interactionCount: this.interactionCount
-                });
-            } catch (error) {
-                console.error('Error loading from localStorage:', error);
-                this.conversationHistory = [];
-                this.interactionCount = 0;
-            }
-        }
-
-        saveToLocalStorage() {
-            try {
-                const recentHistory = this.conversationHistory.slice(-50);
-                localStorage.setItem('polybot_history', JSON.stringify(recentHistory));
-                localStorage.setItem('polybot_interaction_count', this.interactionCount.toString());
-                
-                console.log('Saved to localStorage:', {
-                    historyLength: recentHistory.length,
-                    interactionCount: this.interactionCount
-                });
-            } catch (error) {
-                console.error('Error saving to localStorage:', error);
-            }
-        }
-
-        addMessage(message, isUser = true, category = null) {
-            this.conversationHistory.push({
-                message: message,
-                isUser: isUser,
-                timestamp: Date.now(),
-                category: category
-            });
-            this.interactionCount++;
-            this.saveToLocalStorage();
-            
-            // Save analytics every 5 interactions
-            if (this.interactionCount % 5 === 0) {
-                this.saveAnalytics();
-            }
-        }
-
-        async saveAnalytics() {
-            try {
-                const analytics = {
-                    sessionId: this.sessionId,
-                    timestamp: Date.now(),
-                    interactionCount: this.interactionCount,
-                    conversationLength: this.conversationHistory.length
-                };
-                
-                fetch('save_chat_analytics.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(analytics)
-                }).catch(error => {
-                    console.log('Analytics save failed (non-critical):', error);
-                });
-                
-                console.log('Analytics saved:', analytics);
-            } catch (error) {
-                console.error('Error saving analytics:', error);
-            }
-        }
-
-        clearHistory() {
-            this.conversationHistory = [];
-            this.interactionCount = 0;
-            localStorage.removeItem('polybot_history');
-            localStorage.removeItem('polybot_interaction_count');
-            console.log('Conversation history cleared');
-        }
-
-        findResponse(userMessage) {
-            const lowerMessage = userMessage.toLowerCase();
-            
-            // Check each category for matching patterns
-            for (const [category, data] of Object.entries(polyBotKnowledge)) {
-                for (const pattern of data.patterns) {
-                    if (lowerMessage.includes(pattern)) {
-                        // Return random response from this category
-                        const responses = data.responses;
-                        return responses[Math.floor(Math.random() * responses.length)];
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function (event) {
+                if (sidebar && sidebar.classList.contains('active')) {
+                    if (!sidebar.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
+                        sidebar.classList.remove('active');
                     }
                 }
-            }
-            
-            // If no match found, return default response
-            const defaultResponses = polyBotKnowledge.default.responses;
-            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-        }
-
-        generateResponse(userMessage) {
-            try {
-                console.log('User Message:', userMessage);
-                
-                // Find appropriate response
-                const response = this.findResponse(userMessage);
-                
-                // Add user message to memory
-                this.addMessage(userMessage, true, 'user_input');
-                
-                console.log('Generated Response:', response);
-                
-                // Add bot response to memory
-                this.addMessage(response, false, 'bot_response');
-                
-                return response;
-            } catch (error) {
-                console.error('Response Generation Error:', error);
-                return "Hello! I'm Poly from James Polymer. How can I help you today?";
-            }
-        }
-    }
-
-    // Initialize Simple PolyBot
-    const polyBot = new SimplePolyBot();
-
-    // Message sending functionality
-    const messageInput = document.querySelector('.message-input');
-    const sendBtn = document.querySelector('.send-btn');
-    const chatMessages = document.querySelector('.chat-messages');
-    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-    
-    // Clear History functionality
-    clearHistoryBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to clear your conversation history? This action cannot be undone.')) {
-            // Clear the conversation memory
-            polyBot.clearHistory();
-            
-            // Clear the chat display (keep only the initial bot message)
-            const chatContent = document.getElementById('chat-content');
-            chatContent.innerHTML = `
-                <!-- Bot Message -->
-                <div class="message bot-message" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
-                    <div class="message-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">P</div>
-                    <div class="message-bubble" style="background: #f8f9fa; padding: 12px 16px; border-radius: 18px; max-width: 70%; color: #495057; line-height: 1.4;">
-                        Hello! I am Poly, your chat bot assistant from JPMC.
-                    </div>
-                </div>
-            `;
-            
-            // Show success message
-            alert('Conversation history cleared successfully!');
-        }
-    });
-
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message) {
-            // Create user message element
-            const userMessage = document.createElement('div');
-            userMessage.className = 'message user-message';
-            userMessage.style.cssText = 'display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; justify-content: flex-end;';
-            
-            userMessage.innerHTML = `
-                <div class="message-bubble" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 18px; max-width: 70%; line-height: 1.4;">
-                    ${message}
-                </div>
-                <div class="message-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: #6c757d; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">U</div>
-            `;
-            
-            chatMessages.appendChild(userMessage);
-            messageInput.value = '';
-            
-            // Auto-scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Show typing indicator
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'message bot-message typing';
-            typingIndicator.style.cssText = 'display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;';
-            typingIndicator.innerHTML = `
-                <div class="message-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">P</div>
-                <div class="message-bubble" style="background: #f8f9fa; padding: 12px 16px; border-radius: 18px; max-width: 70%; color: #495057; line-height: 1.4;">
-                    <div style="display: flex; gap: 4px;">
-                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; animation: typing 1.4s infinite ease-in-out;"></div>
-                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; animation: typing 1.4s infinite ease-in-out 0.2s;"></div>
-                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; animation: typing 1.4s infinite ease-in-out 0.4s;"></div>
-                    </div>
-                </div>
-            `;
-            chatMessages.appendChild(typingIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Generate Simple PolyBot response
-            let aiResponse;
-            try {
-                aiResponse = polyBot.generateResponse(message);
-            } catch (error) {
-                console.error('PolyBot Response Error:', error);
-                const fallbacks = [
-                    "Hi there! 👋 I'm Poly from James Polymer. How can I help you today?",
-                    "Hello! 😊 I'm Poly, your AI assistant. What can I help you with?",
-                    "Hey! 👋 I'm Poly from James Polymer. How can I assist you?",
-                    "Hi! 😄 I'm Poly, your friendly AI assistant. What would you like to know?"
-                ];
-                aiResponse = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-            }
-            
-            // Remove typing indicator and show AI response after 300-600ms
-            setTimeout(() => {
-                try {
-                    chatMessages.removeChild(typingIndicator);
-                } catch (error) {
-                    console.error('Error removing typing indicator:', error);
-                }
-                
-                const botMessage = document.createElement('div');
-                botMessage.className = 'message bot-message';
-                botMessage.style.cssText = 'display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;';
-                
-                botMessage.innerHTML = `
-                    <div class="message-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">P</div>
-                    <div class="message-bubble" style="background: #f8f9fa; padding: 12px 16px; border-radius: 18px; max-width: 70%; color: #495057; line-height: 1.4;">
-                        ${aiResponse}
-                    </div>
-                `;
-                
-                chatMessages.appendChild(botMessage);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 300 + Math.random() * 300); // Random delay between 300-600ms
-        }
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
-
-    function attachSuggestedButtonListeners() {
-        const suggestedButtons = document.querySelectorAll('.suggested-question');
-        suggestedButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const message = this.textContent.trim();
-                messageInput.value = message;
-                sendBtn.click();
             });
+
+            // Supply Chain dropdown functionality
+            if (supplyChainDropdown) {
+                supplyChainDropdown.addEventListener('click', function () {
+                    supplyChainDropdownMenu.classList.toggle('active');
+                });
+            }
+
+            // Handle window resize
+            function handleResize() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('active');
+                }
+            }
+
+            window.addEventListener('resize', handleResize);
+            handleResize();
+
+            // Employee search functionality
+            const employeeSearch = document.getElementById('employeeSearch');
+            const positionFilter = document.getElementById('positionFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const clearFilters = document.getElementById('clearFilters');
+            const employeeRows = document.querySelectorAll('tbody tr');
+
+            function filterEmployees() {
+                const searchTerm = employeeSearch.value.toLowerCase();
+                const positionValue = positionFilter.value;
+                const statusValue = statusFilter.value;
+
+                employeeRows.forEach(row => {
+                    const name = row.querySelector('.employee-name').textContent.toLowerCase();
+                    const position = row.querySelector('.employee-position').textContent;
+                    const status = row.querySelector('.employee-status').textContent;
+                    const employeeId = row.querySelector('.employee-id').textContent.toLowerCase();
+
+                    const matchesSearch = name.includes(searchTerm) || employeeId.includes(searchTerm);
+                    const matchesPosition = !positionValue || position === positionValue;
+                    const matchesStatus = !statusValue || status === statusValue;
+
+                    if (matchesSearch && matchesPosition && matchesStatus) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            employeeSearch.addEventListener('input', filterEmployees);
+            positionFilter.addEventListener('change', filterEmployees);
+            statusFilter.addEventListener('change', filterEmployees);
+
+            clearFilters.addEventListener('click', function () {
+                employeeSearch.value = '';
+                positionFilter.value = '';
+                statusFilter.value = '';
+                filterEmployees();
+            });
+
+            // Action button handlers
+            document.querySelectorAll('.action-btn.view').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const employeeId = this.getAttribute('data-id');
+                    alert(`View details for employee: ${employeeId}`);
+                });
+            });
+
+            document.querySelectorAll('.action-btn.edit').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const employeeId = this.getAttribute('data-id');
+                    alert(`Edit employee: ${employeeId}`);
+                });
+            });
+
+            document.querySelectorAll('.action-btn.delete').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const employeeId = this.getAttribute('data-id');
+                    const employeeName = this.getAttribute('data-name');
+                    if (confirm(`Are you sure you want to delete employee ${employeeName} (${employeeId})?`)) {
+                        alert(`Employee ${employeeName} deleted successfully`);
+                    }
+                });
+            });
+
+            // Add Employee button
+            document.getElementById('addEmployeeBtn').addEventListener('click', function () {
+                alert('Add new employee functionality will be implemented here');
+            });
+
+            // Export button
+            document.getElementById('exportBtn').addEventListener('click', function () {
+                alert('Export functionality will be implemented here');
+            });
+
+            // Recruitment Management search/filter
+            const applicantSearch = document.getElementById('applicantSearch');
+            const applicantStatusFilter = document.getElementById('applicantStatusFilter');
+            const clearApplicantFilters = document.getElementById('clearApplicantFilters');
+            const applicantRows = document.querySelectorAll('#sectionRecruitment tbody tr');
+
+            function filterApplicants() {
+                const searchTerm = applicantSearch.value.toLowerCase();
+                const statusValue = applicantStatusFilter.value;
+                applicantRows.forEach(row => {
+                    const name = row.children[1].textContent.toLowerCase();
+                    const status = row.children[4].textContent;
+                    const id = row.children[0].textContent.toLowerCase();
+                    const matchesSearch = name.includes(searchTerm) || id.includes(searchTerm);
+                    const matchesStatus = !statusValue || status === statusValue;
+                    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+                });
+            }
+            if (applicantSearch) applicantSearch.addEventListener('input', filterApplicants);
+            if (applicantStatusFilter) applicantStatusFilter.addEventListener('change', filterApplicants);
+            if (clearApplicantFilters) clearApplicantFilters.addEventListener('click', function () {
+                applicantSearch.value = '';
+                applicantStatusFilter.value = '';
+                filterApplicants();
+            });
+
+            // HR Functions search/filter
+            const hrSearch = document.getElementById('hrSearch');
+            const hrStatusFilter = document.getElementById('hrStatusFilter');
+            const clearHRFilters = document.getElementById('clearHRFilters');
+            const hrRows = document.querySelectorAll('#sectionHRFunctions tbody tr');
+
+            function filterHRFunctions() {
+                const searchTerm = hrSearch.value.toLowerCase();
+                const statusValue = hrStatusFilter.value;
+                hrRows.forEach(row => {
+                    const name = row.children[1].textContent.toLowerCase();
+                    const status = row.children[5].textContent;
+                    const id = row.children[0].textContent.toLowerCase();
+                    const matchesSearch = name.includes(searchTerm) || id.includes(searchTerm);
+                    const matchesStatus = !statusValue || status === statusValue;
+                    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+                });
+            }
+            if (hrSearch) hrSearch.addEventListener('input', filterHRFunctions);
+            if (hrStatusFilter) hrStatusFilter.addEventListener('change', filterHRFunctions);
+            if (clearHRFilters) clearHRFilters.addEventListener('click', function () {
+                hrSearch.value = '';
+                hrStatusFilter.value = '';
+                filterHRFunctions();
+            });
+
+            // Category switching logic
+            const btnEmployee = document.getElementById('btnEmployee');
+            const btnRecruitment = document.getElementById('btnRecruitment');
+            const btnHRFunctions = document.getElementById('btnHRFunctions');
+            const btnActivityLog = document.getElementById('btnActivityLog');
+            const sectionEmployee = document.getElementById('sectionEmployee');
+            const sectionRecruitment = document.getElementById('sectionRecruitment');
+            const sectionHRFunctions = document.getElementById('sectionHRFunctions');
+            const sectionActivityLog = document.getElementById('sectionActivityLog');
+
+            function showSection(section) {
+                sectionEmployee.classList.remove('active');
+                sectionRecruitment.classList.remove('active');
+                sectionHRFunctions.classList.remove('active');
+                sectionActivityLog.style.display = 'none';
+                btnEmployee.classList.remove('active');
+                btnRecruitment.classList.remove('active');
+                btnHRFunctions.classList.remove('active');
+                btnActivityLog.classList.remove('active');
+                if (section === sectionActivityLog) {
+                    sectionActivityLog.style.display = 'block';
+                } else {
+                    section.classList.add('active');
+                }
+            }
+
+            btnEmployee.addEventListener('click', function () {
+                showSection(sectionEmployee);
+                btnEmployee.classList.add('active');
+            });
+
+            btnRecruitment.addEventListener('click', function () {
+                showSection(sectionRecruitment);
+                btnRecruitment.classList.add('active');
+            });
+
+            btnHRFunctions.addEventListener('click', function () {
+                showSection(sectionHRFunctions);
+                btnHRFunctions.classList.add('active');
+            });
+
+            btnActivityLog.addEventListener('click', function () {
+                showSection(sectionActivityLog);
+                btnActivityLog.classList.add('active');
+            });
+
+            // Function to update leave type
+            function updateLeaveType(selectElement, employeeId) {
+                const newLeaveType = selectElement.value;
+                // Here you would typically make an AJAX call to update the database
+                console.log(`Updating leave type for employee ${employeeId} to ${newLeaveType}`);
+                
+                // Example AJAX call (uncomment and implement when ready):
+                /*
+                fetch('update_leave_type.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        employee_id: employeeId,
+                        leave_type: newLeaveType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Leave type updated successfully');
+                    } else {
+                        alert('Error updating leave type');
+                        // Optionally revert the selection
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating leave type');
+                    // Optionally revert the selection
+                });
+                */
+            }
         });
-    }
+    </script>
+</body>
 
-    attachSuggestedButtonListeners();
-
-    const suggestedContainer = document.getElementById('suggested-questions');
-
-    suggestedContainer.addEventListener('wheel', function (e) {
-        if (e.deltaY !== 0) {
-            e.preventDefault();
-            suggestedContainer.scrollLeft += e.deltaY;
-        }
-    }, { passive: false });
-
-});
-</script>
-
+</html>
