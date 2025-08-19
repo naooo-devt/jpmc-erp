@@ -157,14 +157,14 @@ $hr_functions = [
         /* System Administration Styles */
         .system-admin-container {
             background: var(--white);
-            border-radius: 12px;
+            border-radius: 8px;
             box-shadow: var(--shadow);
             border: 1px solid var(--border-color);
             overflow: hidden;
         }
 
         .system-admin-header {
-            padding: 1.5rem;
+            padding: 0.75rem;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -173,36 +173,38 @@ $hr_functions = [
         }
 
         .system-admin-title {
-            font-size: 1.25rem;
+            font-size: 1rem;
             font-weight: 700;
             color: var(--dark-gray);
         }
 
         .system-admin-actions {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .employee-table {
-            width: 1800px;
+            width: 1200px;
+            min-width: 100%;
             border-collapse: collapse;
             background: var(--white);
+            font-size: 0.85rem;
         }
 
         .employee-table th {
             background: var(--light-gray);
-            padding: 1rem;
+            padding: 0.5rem;
             text-align: left;
             font-weight: 600;
             color: var(--dark-gray);
             border-bottom: 1px solid var(--border-color);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.03em;
         }
 
         .employee-table td {
-            padding: 1rem;
+            padding: 0.5rem;
             border-bottom: 1px solid var(--border-color);
             color: var(--dark-gray);
             vertical-align: middle;
@@ -216,25 +218,27 @@ $hr_functions = [
             font-family: 'Courier New', monospace;
             font-weight: 600;
             color: var(--primary-blue);
+            font-size: 0.85em;
         }
 
         .employee-name {
             font-weight: 600;
             color: var(--dark-gray);
+            font-size: 0.95em;
         }
 
         .employee-position {
             color: var(--gray);
-            font-size: 0.875rem;
+            font-size: 0.8em;
         }
 
         .employee-status {
-            padding: 0.25rem 0.75rem;
-            border-radius: 16px;
-            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.03em;
         }
 
         .employee-status.active {
@@ -249,15 +253,15 @@ $hr_functions = [
 
         .employee-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.3rem;
             justify-content: center;
         }
 
         .action-btn {
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             background: var(--light-gray);
             color: var(--gray);
             cursor: pointer;
@@ -265,12 +269,13 @@ $hr_functions = [
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
+            font-size: 0.9em;
         }
 
         .action-btn:hover {
             background: var(--primary-blue);
             color: var(--white);
-            transform: scale(1.1);
+            transform: scale(1.08);
         }
 
         .action-btn.view {
@@ -304,20 +309,20 @@ $hr_functions = [
         }
 
         .last-login {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--gray);
         }
 
         /* Filter and Search Styles */
         .filter-section {
-            padding: 1rem 1.5rem;
+            padding: 0.5rem 0.75rem;
             border-bottom: 1px solid var(--border-color);
             background: var(--white);
         }
 
         .filter-row {
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -325,55 +330,55 @@ $hr_functions = [
         .filter-group {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.3rem;
         }
 
         .filter-label {
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
             color: var(--dark-gray);
         }
 
         .filter-input {
-            padding: 0.5rem 0.75rem;
+            padding: 0.3rem 0.5rem;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 0.875rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
             background: var(--white);
             color: var(--dark-gray);
-            min-width: 150px;
+            min-width: 100px;
         }
 
         .filter-input:focus {
             outline: none;
             border-color: var(--primary-blue);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
 
         .search-box {
             flex: 1;
-            min-width: 200px;
+            min-width: 120px;
         }
 
         /* Category Buttons */
         .category-buttons {
             display: flex;
-            gap: 1rem;
-            padding: 1.5rem;
+            gap: 0.5rem;
+            padding: 0.75rem;
             background: var(--white);
             border-bottom: 1px solid var(--border-color);
         }
 
         .category-btn {
-            padding: 0.75rem 1.5rem;
+            padding: 0.5rem 1rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             background: var(--light-gray);
             color: var(--primary-blue);
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         .category-btn.active {
@@ -393,7 +398,7 @@ $hr_functions = [
         @media (max-width: 768px) {
             .system-admin-header {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 0.5rem;
                 align-items: stretch;
             }
 
@@ -411,32 +416,33 @@ $hr_functions = [
             }
 
             .employee-table {
-                font-size: 0.75rem;
+                font-size: 0.7rem;
             }
 
             .employee-table th,
             .employee-table td {
-                padding: 0.5rem;
+                padding: 0.3rem;
             }
 
             .employee-actions {
                 flex-direction: column;
-                gap: 0.25rem;
+                gap: 0.15rem;
             }
 
             .action-btn {
-                width: 28px;
-                height: 28px;
+                width: 20px;
+                height: 20px;
             }
         }
 
         /* Table Scroll */
         .table-container {
-            max-height: 600px;
-            overflow-y: auto;
-            overflow-x: unset;
-            scrollbar-width: thin;
+            max-height: 400px;
+            overflow-y: scroll;
+            overflow-x: auto;
+            scrollbar-width: auto;
             scrollbar-color: var(--gray) var(--light-gray);
+            width: 100%;
         }
 
         .table-scroll-x {
@@ -445,37 +451,32 @@ $hr_functions = [
             display: block;
         }
 
-        .employee-table {
-            width: 1800px;
-            border-collapse: collapse;
-            background: var(--white);
-        }
-
-        .table-container::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .table-container::-webkit-scrollbar-track {
+        /* Always show scrollbars for Webkit browsers */
+        .table-container::-webkit-scrollbar,
+        .table-scroll-x::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
             background: var(--light-gray);
-            border-radius: 4px;
         }
 
-        .table-container::-webkit-scrollbar-thumb {
+        .table-container::-webkit-scrollbar-thumb,
+        .table-scroll-x::-webkit-scrollbar-thumb {
             background: var(--gray);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
-        .table-container::-webkit-scrollbar-thumb:hover {
+        .table-container::-webkit-scrollbar-thumb:hover,
+        .table-scroll-x::-webkit-scrollbar-thumb:hover {
             background: var(--dark-gray);
         }
 
         /* Leave Type Dropdown */
         .leave-type-dropdown {
             width: 100%;
-            padding: 0.25rem;
+            padding: 0.15rem;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.875rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
             background: var(--white);
             color: var(--dark-gray);
         }
@@ -599,10 +600,6 @@ $hr_functions = [
                                             <td><?php echo htmlspecialchars($employee['email']); ?></td>
                                             <td>
                                                 <div class="employee-actions">
-                                                    <button class="action-btn view" data-id="<?php echo $employee['id']; ?>"
-                                                        title="View Profile">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
                                                     <button class="action-btn edit" data-id="<?php echo $employee['id']; ?>"
                                                         title="Edit Employee">
                                                         <i class="fas fa-edit"></i>
@@ -776,7 +773,7 @@ $hr_functions = [
                                             <td><?php echo htmlspecialchars($hr['employee_id']); ?></td>
                                             <td><?php echo htmlspecialchars($hr['name']); ?></td>
                                             <td>
-                                                <select class="leave-type-dropdown" onchange="updateLeaveType(this, '<?php echo $hr['employee_id']; ?>')">
+                                                <select class="leave-type-dropdown" onchange="handleLeaveTypeChange(this, '<?php echo $hr['employee_id']; ?>')">
                                                     <option value="Sick Leave" <?php echo $hr['leave_type'] == 'Sick Leave' ? 'selected' : ''; ?>>Sick Leave</option>
                                                     <option value="Vacation Leave" <?php echo $hr['leave_type'] == 'Vacation Leave' ? 'selected' : ''; ?>>Vacation Leave</option>
                                                     <option value="Maternity Leave" <?php echo $hr['leave_type'] == 'Maternity Leave' ? 'selected' : ''; ?>>Maternity Leave</option>
@@ -785,7 +782,25 @@ $hr_functions = [
                                                     <option value="Emergency Leave" <?php echo $hr['leave_type'] == 'Emergency Leave' ? 'selected' : ''; ?>>Emergency Leave</option>
                                                     <option value="Personal Leave" <?php echo $hr['leave_type'] == 'Personal Leave' ? 'selected' : ''; ?>>Personal Leave</option>
                                                     <option value="Unpaid Leave" <?php echo $hr['leave_type'] == 'Unpaid Leave' ? 'selected' : ''; ?>>Unpaid Leave</option>
+                                                    <option value="Others" <?php echo !in_array($hr['leave_type'], [
+                                                        'Sick Leave','Vacation Leave','Maternity Leave','Paternity Leave','Bereavement Leave','Emergency Leave','Personal Leave','Unpaid Leave'
+                                                    ]) ? 'selected' : ''; ?>>Others</option>
                                                 </select>
+                                                <span class="leave-type-other-box" style="display:<?php echo !in_array($hr['leave_type'], [
+                                                    'Sick Leave','Vacation Leave','Maternity Leave','Paternity Leave','Bereavement Leave','Emergency Leave','Personal Leave','Unpaid Leave'
+                                                ]) ? 'inline-block' : 'none'; ?>;">
+                                                    <input type="text"
+                                                        class="leave-type-other"
+                                                        style="margin-top:0.3rem;width:70%;"
+                                                        placeholder="Specify leave type"
+                                                        value="<?php echo !in_array($hr['leave_type'], [
+                                                            'Sick Leave','Vacation Leave','Maternity Leave','Paternity Leave','Bereavement Leave','Emergency Leave','Personal Leave','Unpaid Leave'
+                                                        ]) ? htmlspecialchars($hr['leave_type']) : ''; ?>"
+                                                        id="leaveTypeOtherInput_<?php echo $hr['employee_id']; ?>"
+                                                    >
+                                                    <button type="button" class="btn btn-primary btn-sm" style="margin-left:4px;" onclick="saveOtherLeaveType('<?php echo $hr['employee_id']; ?>')">Save</button>
+                                                    <button type="button" class="btn btn-outline btn-sm" onclick="cancelOtherLeaveType('<?php echo $hr['employee_id']; ?>')">Cancel</button>
+                                                </span>
                                             </td>
                                             <td><?php echo htmlspecialchars($hr['date_filed']); ?></td>
                                             <td><?php echo htmlspecialchars($hr['leave_duration']); ?></td>
@@ -861,6 +876,89 @@ $hr_functions = [
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Add Employee Modal -->
+    <div id="addEmployeeModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;">
+        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:1rem; width:350px; margin:5% auto;">
+            <form id="employeeForm" enctype="multipart/form-data">
+                <h3>Add Employee</h3>
+                <label>Full Name:</label>
+                <input type="text" name="name" required>
+                <label>Position:</label>
+                <input type="text" name="position" required>
+                <label>Department:</label>
+                <input type="text" name="department" required>
+                <label>Date Hired:</label>
+                <input type="date" name="date_hired" required>
+                <label>Employment Type:</label>
+                <input type="text" name="employment_type" required>
+                <label>Status:</label>
+                <select name="status" required>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <label>Contact:</label>
+                <input type="text" name="contact">
+                <label>Email:</label>
+                <input type="email" name="email">
+                <div style="margin-top:0.5rem;">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal('addEmployeeModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Applicant Modal -->
+    <div id="addApplicantModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;">
+        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:1rem; width:350px; margin:5% auto;">
+            <form id="applicantForm" enctype="multipart/form-data">
+                <h3>Add Applicant</h3>
+                <label>Full Name:</label>
+                <input type="text" name="name" required>
+                <label>Position Applied:</label>
+                <input type="text" name="position_applied" required>
+                <label>Date Applied:</label>
+                <input type="date" name="date_applied" required>
+                <label>Status:</label>
+                <select name="status" required>
+                    <option value="Screening">Screening</option>
+                    <option value="Interview">Interview</option>
+                    <option value="Hired">Hired</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+                <label>Contact:</label>
+                <input type="text" name="contact">
+                <label>Email:</label>
+                <input type="email" name="email">
+                <label>Resume/CV:</label>
+                <input type="file" name="resume" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                <label>Assigned HR:</label>
+                <input type="text" name="assigned_hr">
+                <div style="margin-top:0.5rem;">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal('addApplicantModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HR Leave Type "Others" Modal -->
+    <div id="leaveTypeOthersModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;">
+        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:1rem; width:350px; margin:5% auto;">
+            <form id="leaveTypeOthersForm">
+                <h3>Specify Other Leave Type</h3>
+                <label>Leave Type:</label>
+                <input type="text" name="other_leave_type" id="otherLeaveTypeInput" required>
+                <label>Reason/Details:</label>
+                <textarea name="other_leave_reason" id="otherLeaveReasonInput" rows="3" required></textarea>
+                <div style="margin-top:0.5rem;">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal('leaveTypeOthersModal')">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -972,15 +1070,26 @@ $hr_functions = [
                 });
             });
 
+            // Modal helpers
+            function openModal(modalId) {
+                document.getElementById(modalId).style.display = 'block';
+            }
+            function closeModal(modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            }
+
             // Add Employee button
             document.getElementById('addEmployeeBtn').addEventListener('click', function () {
-                alert('Add new employee functionality will be implemented here');
+                openModal('addEmployeeModal');
+            });
+            // Add Applicant button
+            document.getElementById('addApplicantBtn').addEventListener('click', function () {
+                openModal('addApplicantModal');
             });
 
-            // Export button
-            document.getElementById('exportBtn').addEventListener('click', function () {
-                alert('Export functionality will be implemented here');
-            });
+            // Prevent form submit (demo only)
+            document.getElementById('employeeForm').onsubmit = function(e){e.preventDefault();closeModal('addEmployeeModal');alert('Saved (demo only)');};
+            document.getElementById('applicantForm').onsubmit = function(e){e.preventDefault();closeModal('addApplicantModal');alert('Saved (demo only)');};
 
             // Recruitment Management search/filter
             const applicantSearch = document.getElementById('applicantSearch');
@@ -1099,7 +1208,7 @@ $hr_functions = [
                     })
                 })
                 .then(response => response.json())
-                .then(data => {
+                .then data => {
                     if (data.success) {
                         alert('Leave type updated successfully');
                     } else {
@@ -1114,6 +1223,42 @@ $hr_functions = [
                 });
                 */
             }
+
+            function handleLeaveTypeChange(select, employeeId) {
+                var box = select.parentNode.querySelector('.leave-type-other-box');
+                if (select.value === 'Others') {
+                    box.style.display = 'inline-block';
+                    box.querySelector('.leave-type-other').focus();
+                } else {
+                    box.style.display = 'none';
+                    // Optionally update leave type via AJAX here
+                }
+            }
+
+            function saveOtherLeaveType(employeeId) {
+                var input = document.getElementById('leaveTypeOtherInput_' + employeeId);
+                var customType = input.value;
+                // Optionally update leave type via AJAX here
+                alert('Other leave type saved: ' + customType);
+            }
+
+            function cancelOtherLeaveType(employeeId) {
+                var box = document.getElementById('leaveTypeOtherInput_' + employeeId).parentNode;
+                box.style.display = 'none';
+                // Optionally reset dropdown to default
+            }
+
+            // Show modal when clicking the "Others" input
+            // Already handled by onclick="openModal('leaveTypeOthersModal')"
+
+            document.getElementById('leaveTypeOthersForm').onsubmit = function(e){
+                e.preventDefault();
+                var leaveType = document.getElementById('otherLeaveTypeInput').value;
+                var reason = document.getElementById('otherLeaveReasonInput').value;
+                // Optionally update leave type and reason via AJAX here
+                closeModal('leaveTypeOthersModal');
+                alert('Other leave type saved: ' + leaveType + '\nReason: ' + reason);
+            };
         });
     </script>
 </body>
