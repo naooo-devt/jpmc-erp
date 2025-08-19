@@ -5,488 +5,110 @@ if (!isset($_SESSION['loggedin'])) {
     exit;
 }
 require_once 'db_connect.php';
-
 // Fetch user details from session for display.
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
-
-// Sample employee data - in a real application, this would come from the database
-$employees = [
-    [
-        'id' => 'JPMC-HRD-025',
-        'name' => 'ROBIN NOMBRANDO',
-        'position' => 'PROCESS ENGINEER',
-        'department' => 'Engineering',
-        'date_hired' => '2022-03-01',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09171234567',
-        'email' => 'robin.nombrando@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-026',
-        'name' => 'JONATHAN RAY Y. ANTIONIO',
-        'position' => 'QA SUPERVISOR',
-        'department' => 'Quality Assurance',
-        'date_hired' => '2021-06-15',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09181234567',
-        'email' => 'jonathan.antonio@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-027',
-        'name' => 'ALBERT B. ALACAPA',
-        'position' => 'WAREHOUSEMAN',
-        'department' => 'Warehouse',
-        'date_hired' => '2023-01-10',
-        'employment_type' => 'Probationary',
-        'status' => 'Active',
-        'contact' => '09191234567',
-        'email' => 'albert.alacapa@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-028',
-        'name' => 'MARDY AGUILAR',
-        'position' => 'MOLD FABRICATOR',
-        'department' => 'Production',
-        'date_hired' => '2022-11-05',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09201234567',
-        'email' => 'mardy.aguilar@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-029',
-        'name' => 'JOHN BRYAN FERRER',
-        'position' => 'IT SUPERVISOR',
-        'department' => 'IT Department',
-        'date_hired' => '2020-02-20',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09211234567',
-        'email' => 'john.ferrer@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-030',
-        'name' => 'ANABEL E. PANUNCIAR',
-        'position' => 'MACHINE OPERATOR',
-        'department' => 'Production',
-        'date_hired' => '2023-03-15',
-        'employment_type' => 'Probationary',
-        'status' => 'Active',
-        'contact' => '09221234567',
-        'email' => 'anabel.panunciar@company.com'
-    ],
-    [
-        'id' => 'JPMC-HRD-031',
-        'name' => 'RICKY V. TONGOL',
-        'position' => 'QUALITY CONTROL',
-        'department' => 'Quality Assurance',
-        'date_hired' => '2021-08-25',
-        'employment_type' => 'Regular',
-        'status' => 'Active',
-        'contact' => '09231234567',
-        'email' => 'ricky.tongol@company.com'
-    ]
-];
-
-// Sample recruitment data
-$applicants = [
-    [
-        'id' => 'APP-001',
-        'name' => 'MARIA SANTOS',
-        'position_applied' => 'QA SUPERVISOR',
-        'date_applied' => '2024-06-01',
-        'status' => 'Screening',
-        'contact' => '09181234567',
-        'email' => 'maria.santos@gmail.com',
-        'resume' => '#',
-        'assigned_hr' => 'JONATHAN RAY Y. ANTIONIO'
-    ],
-    [
-        'id' => 'APP-002',
-        'name' => 'JUAN DELA CRUZ',
-        'position_applied' => 'PROCESS ENGINEER',
-        'date_applied' => '2024-06-05',
-        'status' => 'Interview',
-        'contact' => '09191234567',
-        'email' => 'juan.delacruz@gmail.com',
-        'resume' => '#',
-        'assigned_hr' => 'ROBIN NOMBRANDO'
-    ]
-];
-
-// Sample HR functions data
-$hr_functions = [
-    [
-        'employee_id' => 'JPMC-HRD-025',
-        'name' => 'ROBIN NOMBRANDO',
-        'leave_type' => 'Sick Leave',
-        'date_filed' => '2024-05-20',
-        'leave_duration' => '2024-05-21 to 2024-05-23',
-        'status' => 'Approved',
-        'benefit_type' => 'Health',
-        'benefit_start' => '2024-06-01',
-        'remarks' => 'Medical certificate provided'
-    ],
-    [
-        'employee_id' => 'JPMC-HRD-026',
-        'name' => 'JONATHAN RAY Y. ANTIONIO',
-        'leave_type' => 'Vacation Leave',
-        'date_filed' => '2024-05-15',
-        'leave_duration' => '2024-05-16 to 2024-05-18',
-        'status' => 'Pending',
-        'benefit_type' => 'Paid Time Off',
-        'benefit_start' => '2024-06-10',
-        'remarks' => 'N/A'
-    ]
-];
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Administration - James Polymer ERP</title>
+    <title>Reports - James Polymer ERP</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="images/logo.png">
+    <!-- Add this style for pagination controls -->
     <style>
-        /* System Administration Styles */
-        .system-admin-container {
-            background: var(--white);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        .system-admin-header {
-            padding: 0.75rem;
-            border-bottom: 1px solid var(--border-color);
+        .pagination {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            background: var(--light-gray);
-        }
-
-        .system-admin-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--dark-gray);
-        }
-
-        .system-admin-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .employee-table {
-            width: 1200px;
-            min-width: 100%;
-            border-collapse: collapse;
-            background: var(--white);
-            font-size: 0.85rem;
-        }
-
-        .employee-table th {
-            background: var(--light-gray);
-            padding: 0.5rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--dark-gray);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .employee-table td {
-            padding: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--dark-gray);
-            vertical-align: middle;
-        }
-
-        .employee-table tr:hover {
-            background: var(--light-gray);
-        }
-
-        .employee-id {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: var(--primary-blue);
-            font-size: 0.85em;
-        }
-
-        .employee-name {
-            font-weight: 600;
-            color: var(--dark-gray);
-            font-size: 0.95em;
-        }
-
-        .employee-position {
-            color: var(--gray);
-            font-size: 0.8em;
-        }
-
-        .employee-status {
-            padding: 0.15rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .employee-status.active {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-
-        .employee-status.inactive {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-        }
-
-        .employee-actions {
-            display: flex;
-            gap: 0.3rem;
-            justify-content: center;
-        }
-
-        .action-btn {
-            width: 24px;
-            height: 24px;
-            border: none;
-            border-radius: 4px;
-            background: var(--light-gray);
-            color: var(--gray);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            font-size: 0.9em;
-        }
-
-        .action-btn:hover {
-            background: var(--primary-blue);
-            color: var(--white);
-            transform: scale(1.08);
-        }
-
-        .action-btn.view {
-            background: rgba(37, 99, 235, 0.1);
-            color: var(--primary-blue);
-        }
-
-        .action-btn.edit {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
-        }
-
-        .action-btn.delete {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-        }
-
-        .action-btn.view:hover {
-            background: var(--primary-blue);
-            color: var(--white);
-        }
-
-        .action-btn.edit:hover {
-            background: var(--warning);
-            color: var(--white);
-        }
-
-        .action-btn.delete:hover {
-            background: var(--error);
-            color: var(--white);
-        }
-
-        .last-login {
-            font-size: 0.7rem;
-            color: var(--gray);
-        }
-
-        /* Filter and Search Styles */
-        .filter-section {
-            padding: 0.5rem 0.75rem;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--white);
-        }
-
-        .filter-row {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
+            margin: 0.5rem 0;
             gap: 0.3rem;
         }
-
-        .filter-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--dark-gray);
-        }
-
-        .filter-input {
-            padding: 0.3rem 0.5rem;
-            border: 1px solid var(--border-color);
+        .pagination button {
+            padding: 0.2rem 0.7rem;
             border-radius: 4px;
-            font-size: 0.8rem;
-            background: var(--white);
-            color: var(--dark-gray);
-            min-width: 100px;
-        }
-
-        .filter-input:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 120px;
-        }
-
-        /* Category Buttons */
-        .category-buttons {
-            display: flex;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            background: var(--white);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .category-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            background: var(--light-gray);
-            color: var(--primary-blue);
+            border: 1px solid #d1d5db;
+            background: #fff;
+            color: #2563eb;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
-            font-size: 0.95rem;
         }
-
-        .category-btn.active {
-            background: var(--primary-blue);
-            color: var(--white);
+        .pagination button.active {
+            background: #2563eb;
+            color: #fff;
         }
-
-        .category-section {
-            display: none;
-        }
-
-        .category-section.active {
-            display: block;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .system-admin-header {
-                flex-direction: column;
-                gap: 0.5rem;
-                align-items: stretch;
-            }
-
-            .system-admin-actions {
-                justify-content: center;
-            }
-
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filter-group {
-                justify-content: space-between;
-            }
-
-            .employee-table {
-                font-size: 0.7rem;
-            }
-
-            .employee-table th,
-            .employee-table td {
-                padding: 0.3rem;
-            }
-
-            .employee-actions {
-                flex-direction: column;
-                gap: 0.15rem;
-            }
-
-            .action-btn {
-                width: 20px;
-                height: 20px;
-            }
-        }
-
-        /* Table Scroll */
-        .table-container {
-            max-height: 400px;
-            overflow-y: scroll;
-            overflow-x: auto;
-            scrollbar-width: auto;
-            scrollbar-color: var(--gray) var(--light-gray);
-            width: 100%;
-        }
-
-        .table-scroll-x {
-            overflow-x: auto;
-            width: 100%;
-            display: block;
-        }
-
-        /* Always show scrollbars for Webkit browsers */
-        .table-container::-webkit-scrollbar,
-        .table-scroll-x::-webkit-scrollbar {
-            height: 10px;
-            width: 10px;
-            background: var(--light-gray);
-        }
-
-        .table-container::-webkit-scrollbar-thumb,
-        .table-scroll-x::-webkit-scrollbar-thumb {
-            background: var(--gray);
-            border-radius: 3px;
-        }
-
-        .table-container::-webkit-scrollbar-thumb:hover,
-        .table-scroll-x::-webkit-scrollbar-thumb:hover {
-            background: var(--dark-gray);
-        }
-
-        /* Leave Type Dropdown */
-        .leave-type-dropdown {
-            width: 100%;
-            padding: 0.15rem;
-            border: 1px solid var(--border-color);
-            border-radius: 3px;
-            font-size: 0.75rem;
-            background: var(--white);
-            color: var(--dark-gray);
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
-
 <body>
     <!-- Sidebar Navigation -->
-    <?php include 'sidebar.php'; ?>
-
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="company-logo">
+                <img src="images/logo.png" alt="Company Logo" style="width: 60px; height: 60px; border-radius: 12px; object-fit: contain; display: block;">
+            </div>
+            <div class="company-name">James Polymer</div>
+            <div class="company-subtitle">Manufacturing Corporation</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-section-title">Main Navigation</div>
+                <a href="index.php" class="menu-item" data-module="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="finances.php" class="menu-item" data-module="finances">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Finances</span>
+                </a>
+                <a href="human_resources.php" class="menu-item" data-module="human-resources">
+                    <i class="fas fa-users"></i>
+                    <span>Human Resources</span>
+                </a>
+                <div class="menu-item menu-dropdown" id="supplyChainDropdown">
+                    <i class="fas fa-link"></i>
+                    <span>Inventory</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="dropdown-menu" id="supplyChainDropdownMenu">
+                    <a href="supply_chain.php" class="menu-item" data-module="manufacturing">
+                        <i class="fas fa-industry"></i>
+                        <span>Manufacturing</span>
+                    </a>
+                    <a href="suppliers.php" class="menu-item" data-module="transactions">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transactions</span>
+                    </a>
+                </div>
+                <a href="transactions.php" class="menu-item" data-module="customer-service">
+                    <i class="fas fa-headset"></i>
+                    <span>Customer Service</span>
+                </a>
+                <a href="reports.php" class="menu-item active" data-module="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-section-title">System</div>
+                <a href="finished_goods.php" class="menu-item" data-module="system-admin">
+                    <i class="fas fa-cog"></i>
+                    <span>System Administration</span>
+                </a>
+                <a href="logout.php" class="menu-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
     <!-- Main Content Area -->
     <div class="main-content">
         <div class="header">
@@ -494,773 +116,870 @@ $hr_functions = [
                 <button class="mobile-menu-toggle" id="mobileMenuToggle">
                     <i class="fas fa-bars"></i>
                 </button>
-                <i class="fas fa-cog" style="font-size: 1.5rem; color: var(--dark-blue);"></i>
-                <h1 class="header-title">System Administration</h1>
+                <h1 class="header-title">Reports</h1>
             </div>
             <div class="header-right">
-                <div class="user-profile">
-                    <i class="fas fa-user-shield"></i>
-                    <span><?php echo ucfirst($role); ?></span>
+                <div class="user-profile" style="padding: 8px 12px; border-radius: 12px; display: flex; align-items: center;">
+                    <i class="fas fa-user-shield" style="font-size: 1.5rem; color: #2563eb; margin-right: 10px;"></i>
+                    <span style="font-weight: 600; color: #475569; font-size: 1rem;"> <?php echo ucfirst($role); ?> </span>
                 </div>
             </div>
         </div>
         <div class="content">
-            <div class="system-admin-container">
-                <div class="category-buttons">
-                    <button class="category-btn active" id="btnEmployee">Employee Management</button>
-                    <button class="category-btn" id="btnRecruitment">Recruitment Management</button>
-                    <button class="category-btn" id="btnHRFunctions">HR Functions</button>
-                    <button class="category-btn" id="btnActivityLog">Activity Log</button>
+            <div class="module-content active" id="reports">
+                <!-- Remove Account Type Filter Button (upper right corner) -->
+                <!-- <div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:0.5rem;">
+                    <label for="accountTypeFilter" style="margin-right:0.5rem; font-weight:600;">Account Type:</label>
+                    <select id="accountTypeFilter" style="padding:0.3rem 0.7rem; border-radius:6px; border:1px solid #d1d5db; font-size:0.95rem;">
+                        <option value="all">All</option>
+                        <option value="expenses">Expenses</option>
+                        <option value="income">Income</option>
+                        <option value="budget">Budget</option>
+                    </select>
+                </div> -->
+                <!-- This section is kept from the original HTML. It can be made dynamic later. -->
+                <div class="section-header">
+                    <h2 style="margin-bottom: 0;">Inventory Report</h2>
                 </div>
-                <!-- Employee Management Section -->
-                <div class="category-section active" id="sectionEmployee">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Employee Management</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-outline" id="exportBtn">
-                                <i class="fas fa-download"></i>
-                                <span>Export</span>
-                            </button>
-                            <button class="btn btn-primary" id="addEmployeeBtn">
-                                <i class="fas fa-plus"></i>
-                                <span>Add Employee</span>
-                            </button>
-                        </div>
+                <div id="inventoryReportContent">
+                    <div class="actions" style="margin-top: 1rem;">
+                        <button class="btn btn-primary" id="generateReportBtnPDF">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                        <button class="btn btn-outline" id="generateReportBtnExcel">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>
                     </div>
-
-                    <div class="filter-section">
-                        <div class="filter-row">
-                            <div class="filter-group">
-                                <label class="filter-label">Search:</label>
-                                <input type="text" class="filter-input search-box" id="employeeSearch"
-                                    placeholder="Search employees...">
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Position:</label>
-                                <select class="filter-input" id="positionFilter">
-                                    <option value="">All Positions</option>
-                                    <option value="PROCESS ENGINEER">Process Engineer</option>
-                                    <option value="QA SUPERVISOR">QA Supervisor</option>
-                                    <option value="WAREHOUSEMAN">Warehouseman</option>
-                                    <option value="MOLD FABRICATOR">Mold Fabricator</option>
-                                    <option value="IT SUPERVISOR">IT Supervisor</option>
-                                    <option value="MACHINE OPERATOR">Machine Operator</option>
-                                    <option value="QUALITY CONTROL">Quality Control</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Status:</label>
-                                <select class="filter-input" id="statusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <button class="btn btn-outline" id="clearFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
-                                </button>
-                            </div>
-                            <div class="filter-group">
-                                <button class="btn btn-outline" id="clearAllEmployeeFilters" style="margin-left:4px;">
-                                    <i class="fas fa-eraser"></i>
-                                    <span>Clear All</span>
-                                </button>
-                            </div>
+                    <div class="report-filters">
+                        <div class="filter-group">
+                            <label for="reportType">Report Type:</label>
+                            <select id="reportType">
+                                <option value="inventory">Inventory Summary</option>
+                                <option value="transactions">Transaction Log</option>
+                                <option value="monthly">Monthly Summary</option>
+                                <option value="lowstock">Low Stock Report</option>
+                            </select>
                         </div>
-                    </div>
-
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <thead>
-                                    <tr>
-                                        <th>Employee ID</th>
-                                        <th>Full Name</th>
-                                        <th>Position/Job Title</th>
-                                        <th>Department</th>
-                                        <th>Date Hired</th>
-                                        <th>Employment Type</th>
-                                        <th>Status</th>
-                                        <th>Contact Number</th>
-                                        <th>Email Address</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($employees as $employee): ?>
-                                        <tr data-employee-id="<?php echo $employee['id']; ?>">
-                                            <td><span class="employee-id"><?php echo htmlspecialchars($employee['id']); ?></span></td>
-                                            <td><span class="employee-name"><?php echo htmlspecialchars($employee['name']); ?></span></td>
-                                            <td><span class="employee-position"><?php echo htmlspecialchars($employee['position']); ?></span></td>
-                                            <td><?php echo htmlspecialchars($employee['department']); ?></td>
-                                            <td><?php echo htmlspecialchars($employee['date_hired']); ?></td>
-                                            <td><?php echo htmlspecialchars($employee['employment_type']); ?></td>
-                                            <td>
-                                                <span class="employee-status <?php echo strtolower($employee['status']); ?>">
-                                                    <?php echo $employee['status']; ?>
-                                                </span>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($employee['contact']); ?></td>
-                                            <td><?php echo htmlspecialchars($employee['email']); ?></td>
-                                            <td>
-                                                <div class="employee-actions">
-                                                    <button class="action-btn edit" data-id="<?php echo $employee['id']; ?>"
-                                                        title="Edit Employee">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn delete" data-id="<?php echo $employee['id']; ?>"
-                                                        data-name="<?php echo htmlspecialchars($employee['name']); ?>"
-                                                        title="Delete Employee">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                        <div class="filter-group">
+                            <label for="reportPeriod">Period:</label>
+                            <select id="reportPeriod">
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month" selected>This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
                         </div>
+                        <div class="filter-group custom-range" style="display: none;">
+                            <label for="reportDateFrom">From:</label>
+                            <input type="date" id="reportDateFrom" class="datepicker">
+                        </div>
+                        <div class="filter-group custom-range" style="display: none;">
+                            <label for="reportDateTo">To:</label>
+                            <input type="date" id="reportDateTo" class="datepicker">
+                        </div>
+                        <button class="btn btn-primary" id="generateReportBtn">
+                            <i class="fas fa-filter"></i> Generate Report
+                        </button>
                     </div>
+                    <div class="report-results" id="reportResults">
+    <!-- Inventory Summary (default) -->
+    <div id="inventorySummarySection">
+        <h3>Inventory Summary</h3>
+        <div class="report-summary">
+            <?php
+            // Fetch inventory summary data from DB
+            $total_inventory = 0;
+            $materials_in = 0;
+            $materials_out = 0;
+            $low_stock_items = 0;
+            $summary = [];
+            $result = $conn->query("SELECT product_name, stock, stock_in, stock_out FROM finished_goods");
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $total_inventory += $row['stock'];
+                    $materials_in += $row['stock_in'];
+                    $materials_out += $row['stock_out'];
+                    if ($row['stock'] < 10) $low_stock_items++;
+                    $summary[] = $row;
+                }
+            }
+            ?>
+            <div class="summary-item">
+                <h4>Total Inventory</h4>
+                <p><?= $total_inventory ?> Bags</p>
+            </div>
+            <div class="summary-item">
+                <h4>Materials In</h4>
+                <p><?= $materials_in ?> Bags</p>
+            </div>
+            <div class="summary-item">
+                <h4>Materials Out</h4>
+                <p><?= $materials_out ?> Bags</p>
+            </div>
+            <div class="summary-item">
+                <h4>Low Stock Items</h4>
+                <p><?= $low_stock_items ?> Items</p>
+            </div>
+        </div>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($summary)): ?>
+                        <?php foreach ($summary as $item): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($item['product_name']) ?></td>
+                            <td><?= htmlspecialchars($item['stock_in']) ?></td>
+                            <td><?= htmlspecialchars($item['stock_out']) ?></td>
+                            <td><?= htmlspecialchars($item['stock']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="4" style="text-align:center;">No inventory summary data found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <!-- ...existing chart code if any... -->
+    </div>
+    <!-- Transaction Log Section -->
+    <div id="transactionLogSection" style="display:none;">
+        <h3>Transaction Log</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Transaction ID</th>
+                        <th>Type</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>User</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_tx = $conn->query("SELECT date, transaction_id, type, product, quantity, user, remarks FROM transactions ORDER BY date DESC LIMIT 50");
+                    if ($result_tx && $result_tx->num_rows > 0):
+                        while ($tx = $result_tx->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($tx['date']))) ?></td>
+                        <td><?= htmlspecialchars($tx['transaction_id']) ?></td>
+                        <td><?= htmlspecialchars($tx['type']) ?></td>
+                        <td><?= htmlspecialchars($tx['product']) ?></td>
+                        <td><?= htmlspecialchars($tx['quantity']) ?></td>
+                        <td><?= htmlspecialchars($tx['user']) ?></td>
+                        <td><?= htmlspecialchars($tx['remarks']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="7" style="text-align:center;">No transactions found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Monthly Summary Section -->
+    <div id="monthlySummarySection" style="display:none;">
+        <h3>Monthly Summary</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Total In</th>
+                        <th>Total Out</th>
+                        <th>Net Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_month = $conn->query("
+                        SELECT DATE_FORMAT(date, '%Y-%m') as month,
+                            SUM(CASE WHEN type='IN' THEN quantity ELSE 0 END) as total_in,
+                            SUM(CASE WHEN type='OUT' THEN quantity ELSE 0 END) as total_out
+                        FROM transactions
+                        GROUP BY month
+                        ORDER BY month DESC
+                        LIMIT 12
+                    ");
+                    if ($result_month && $result_month->num_rows > 0):
+                        while ($m = $result_month->fetch_assoc()):
+                            $net = $m['total_in'] - $m['total_out'];
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($m['month']) ?></td>
+                        <td><?= htmlspecialchars($m['total_in']) ?></td>
+                        <td><?= htmlspecialchars($m['total_out']) ?></td>
+                        <td><?= htmlspecialchars($net) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="4" style="text-align:center;">No monthly summary data found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Low Stock Report Section -->
+    <div id="lowStockSection" style="display:none;">
+        <h3>Low Stock Report</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Stock</th>
+                        <th>Minimum Required</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_low = $conn->query("SELECT product_name, stock, status FROM finished_goods WHERE stock < 10 ORDER BY stock ASC");
+                    if ($result_low && $result_low->num_rows > 0):
+                        while ($item = $result_low->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($item['product_name']) ?></td>
+                        <td><?= htmlspecialchars($item['stock']) ?></td>
+                        <td>10</td>
+                        <td><span style="color:#ef4444;font-weight:600;">Low</span></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="4" style="text-align:center;">No low stock items found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
                 </div>
-                <!-- Recruitment Management Section -->
-                <div class="category-section" id="sectionRecruitment">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">Recruitment Management</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-outline" id="exportRecruitmentBtn">
-                                <i class="fas fa-download"></i>
-                                <span>Export</span>
-                            </button>
-                            <button class="btn btn-primary" id="addApplicantBtn">
-                                <i class="fas fa-plus"></i>
-                                <span>Add Applicant</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="filter-section">
-                        <div class="filter-row">
-                            <div class="filter-group">
-                                <label class="filter-label">Search:</label>
-                                <input type="text" class="filter-input search-box" id="applicantSearch" placeholder="Search applicants...">
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Status:</label>
-                                <select class="filter-input" id="applicantStatusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="Screening">Screening</option>
-                                    <option value="Interview">Interview</option>
-                                    <option value="Hired">Hired</option>
-                                    <option value="Rejected">Rejected</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <button class="btn btn-outline" id="clearApplicantFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <thead>
-                                    <tr>
-                                        <th>Applicant ID</th>
-                                        <th>Full Name</th>
-                                        <th>Position Applied</th>
-                                        <th>Date Applied</th>
-                                        <th>Application Status</th>
-                                        <th>Contact Number</th>
-                                        <th>Email Address</th>
-                                        <th>Resume/CV</th>
-                                        <th>Assigned HR</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($applicants as $applicant): ?>
-                                        <tr data-applicant-id="<?php echo $applicant['id']; ?>">
-                                            <td><?php echo htmlspecialchars($applicant['id']); ?></td>
-                                            <td><?php echo htmlspecialchars($applicant['name']); ?></td>
-                                            <td><?php echo htmlspecialchars($applicant['position_applied']); ?></td>
-                                            <td><?php echo htmlspecialchars($applicant['date_applied']); ?></td>
-                                            <td><?php echo htmlspecialchars($applicant['status']); ?></td>
-                                            <td><?php echo htmlspecialchars($applicant['contact']); ?></td>
-                                            <td><?php echo htmlspecialchars($applicant['email']); ?></td>
-                                            <td>
-                                                <a href="<?php echo $applicant['resume']; ?>" target="_blank" class="action-btn view" title="View Resume">
-                                                    <i class="fas fa-file"></i>
-                                                </a>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($applicant['assigned_hr']); ?></td>
-                                            <td>
-                                                <div class="employee-actions">
-                                                    <button class="action-btn view" data-id="<?php echo $applicant['id']; ?>" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Edit Applicant">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn delete" data-id="<?php echo $applicant['id']; ?>" data-name="<?php echo htmlspecialchars($applicant['name']); ?>" title="Delete Applicant">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Update Status">
-                                                        <i class="fas fa-sync"></i>
-                                                    </button>
-                                                    <button class="action-btn edit" data-id="<?php echo $applicant['id']; ?>" title="Schedule Interview">
-                                                        <i class="fas fa-calendar"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="section-header" style="margin-top:2rem;">
+                    <h2 style="margin-bottom: 0;">History Report</h2>
                 </div>
-                <!-- HR Functions Section -->
-                <div class="category-section" id="sectionHRFunctions">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">HR Functions</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-outline" id="exportHRBtn">
-                                <i class="fas fa-download"></i>
-                                <span>Export</span>
-                            </button>
-                        </div>
+                <div id="historyReportContent">
+                    <div class="actions" style="margin-top: 1rem;">
+                        <button class="btn btn-primary" id="generateHistoryReportBtnPDF">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                        <button class="btn btn-outline" id="generateHistoryReportBtnExcel">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>
                     </div>
-                    <div class="filter-section">
-                        <div class="filter-row">
-                            <div class="filter-group">
-                                <label class="filter-label">Search:</label>
-                                <input type="text" class="filter-input search-box" id="hrSearch" placeholder="Search HR functions...">
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Status:</label>
-                                <select class="filter-input" id="hrStatusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="Approved">Approved</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Denied">Denied</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <button class="btn btn-outline" id="clearHRFilters">
-                                    <i class="fas fa-times"></i>
-                                    <span>Clear</span>
-                                </button>
-                            </div>
+                    <div class="report-filters">
+                        <div class="filter-group">
+                            <label for="historyReportType">Report Type:</label>
+                            <select id="historyReportType">
+                                <option value="finances">Finances</option>
+                                <option value="hr">Human Resources</option>
+                                <option value="inventory">Inventory</option>
+                                <option value="feedback">Customer Feedback</option>
+                            </select>
                         </div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <thead>
-                                    <tr>
-                                        <th>Employee ID</th>
-                                        <th>Full Name</th>
-                                        <th>Leave Type</th>
-                                        <th>Date Filed</th>
-                                        <th>Leave Duration</th>
-                                        <th>Status</th>
-                                        <th>Benefit Type</th>
-                                        <th>Benefit Start Date</th>
-                                        <th>Remarks</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($hr_functions as $hr): ?>
-                                        <tr data-employee-id="<?php echo $hr['employee_id']; ?>">
-                                            <td><?php echo htmlspecialchars($hr['employee_id']); ?></td>
-                                            <td><?php echo htmlspecialchars($hr['name']); ?></td>
-                                            <td>
-                                                <select class="leave-type-dropdown" onchange="handleLeaveTypeChange(this, '<?php echo $hr['employee_id']; ?>')">
-                                                    <option value="Sick Leave" <?php echo $hr['leave_type'] == 'Sick Leave' ? 'selected' : ''; ?>>Sick Leave</option>
-                                                    <option value="Vacation Leave" <?php echo $hr['leave_type'] == 'Vacation Leave' ? 'selected' : ''; ?>>Vacation Leave</option>
-                                                    <option value="Maternity Leave" <?php echo $hr['leave_type'] == 'Maternity Leave' ? 'selected' : ''; ?>>Maternity Leave</option>
-                                                    <option value="Paternity Leave" <?php echo $hr['leave_type'] == 'Paternity Leave' ? 'selected' : ''; ?>>Paternity Leave</option>
-                                                    <option value="Bereavement Leave" <?php echo $hr['leave_type'] == 'Bereavement Leave' ? 'selected' : ''; ?>>Bereavement Leave</option>
-                                                    <option value="Emergency Leave" <?php echo $hr['leave_type'] == 'Emergency Leave' ? 'selected' : ''; ?>>Emergency Leave</option>
-                                                    <option value="Personal Leave" <?php echo $hr['leave_type'] == 'Personal Leave' ? 'selected' : ''; ?>>Personal Leave</option>
-                                                    <option value="Unpaid Leave" <?php echo $hr['leave_type'] == 'Unpaid Leave' ? 'selected' : ''; ?>>Unpaid Leave</option>
-                                                    <option value="Others" <?php echo !in_array($hr['leave_type'], [
-                                                        'Sick Leave','Vacation Leave','Maternity Leave','Paternity Leave','Bereavement Leave','Emergency Leave','Personal Leave','Unpaid Leave'
-                                                    ]) ? 'selected' : ''; ?>>Others</option>
-                                                </select>
-                                                        placeholder="Specify leave type"
-                                                        value="<?php echo !in_array($hr['leave_type'], [
-                                                            'Sick Leave','Vacation Leave','Maternity Leave','Paternity Leave','Bereavement Leave','Emergency Leave','Personal Leave','Unpaid Leave'
-                                                        ]) ? htmlspecialchars($hr['leave_type']) : ''; ?>"
-                                                        id="leaveTypeOtherInput_<?php echo $hr['employee_id']; ?>"
-                                                    >
-                                                    <button type="button" class="btn btn-primary btn-sm" style="margin-left:4px;" onclick="saveOtherLeaveType('<?php echo $hr['employee_id']; ?>')">Save</button>
-                                                    <button type="button" class="btn btn-outline btn-sm" onclick="cancelOtherLeaveType('<?php echo $hr['employee_id']; ?>')">Cancel</button>
-                                                </span>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($hr['date_filed']); ?></td>
-                                            <td><?php echo htmlspecialchars($hr['leave_duration']); ?></td>
-                                            <td><?php echo htmlspecialchars($hr['status']); ?></td>
-                                            <td><?php echo htmlspecialchars($hr['benefit_type']); ?></td>
-                                            <td><?php echo htmlspecialchars($hr['benefit_start']); ?></td>
-                                            <td><?php echo htmlspecialchars($hr['remarks']); ?></td>
-                                            <td>
-                                                <div class="employee-actions">
-                                                    <button class="action-btn edit" data-id="<?php echo $hr['employee_id']; ?>" title="Edit HR Function">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn delete" data-id="<?php echo $hr['employee_id']; ?>" data-name="<?php echo htmlspecialchars($hr['name']); ?>" title="Delete HR Function">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="action-btn edit" data-id="<?php echo $hr['employee_id']; ?>" title="Approve">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                    <button class="action-btn delete" data-id="<?php echo $hr['employee_id']; ?>" title="Deny">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                    <button class="action-btn view" data-id="<?php echo $hr['employee_id']; ?>" title="View Request">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                        <div class="filter-group">
+                            <label for="historyReportPeriod">Period:</label>
+                            <select id="historyReportPeriod">
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month" selected>This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
                         </div>
-                    </div>
-                </div>
-                <!-- Activity Log Section -->
-                <div class="category-section" id="sectionActivityLog" style="display:none;">
-                    <div class="system-admin-header">
-                        <div class="system-admin-title">System Activity Log</div>
-                        <div class="system-admin-actions">
-                            <button class="btn btn-outline" id="exportActivityLogBtn">
-                                <i class="fas fa-download"></i>
-                                <span>Export</span>
-                            </button>
+                        <div class="filter-group custom-range" style="display: none;">
+                            <label for="historyReportDateFrom">From:</label>
+                            <input type="date" id="historyReportDateFrom" class="datepicker">
                         </div>
-                    </div>
-                    <div class="table-container">
-                        <div class="table-scroll-x">
-                            <table class="employee-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>User ID</th>
-                                        <th>Username</th>
-                                        <th>Action</th>
-                                        <th>Details</th>
-                                        <th>IP Address</th>
-                                        <th>Date/Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Example static row, replace with PHP fetching from DB -->
-                                    <tr>
-                                        <td>1</td>
-                                        <td>101</td>
-                                        <td>admin</td>
-                                        <td>Login</td>
-                                        <td>User logged in</td>
-                                        <td>192.168.1.10</td>
-                                        <td>2024-06-10 09:15:00</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="filter-group custom-range" style="display: none;">
+                            <label for="historyReportDateTo">To:</label>
+                            <input type="date" id="historyReportDateTo" class="datepicker">
                         </div>
+                        <button class="btn btn-primary" id="generateHistoryReportBtn">
+                            <i class="fas fa-filter"></i> Generate Report
+                        </button>
                     </div>
-                </div>
+                    <div class="report-results" id="historyReportResults">
+    <!-- Finance History Section -->
+    <div id="historyFinanceSection" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Finance Report</h3>
+            <div style="display:flex; align-items:center;">
+                <label for="accountTypeFilter" style="margin-right:0.5rem; font-weight:600;">Account Type:</label>
+                <select id="accountTypeFilter" style="padding:0.3rem 0.7rem; border-radius:6px; border:1px solid #d1d5db; font-size:0.95rem; margin-right:0.5rem;">
+                    <option value="all">All</option>
+                    <option value="expenses">Expenses</option>
+                    <option value="income">Income</option>
+                    <option value="budget">Budget</option>
+                </select>
+                <button id="clearFinanceFiltersBtn" style="padding:0.3rem 0.7rem; border-radius:6px; border:1px solid #d1d5db; font-size:0.95rem; background:white; color:#2563eb; font-weight:600; cursor:pointer;">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Transaction</th>
+                        <th>Amount</th>
+                        <th>Type</th>
+                        <th>Account</th>
+                        <th>Expenses</th>
+                        <th>Income</th>
+                        <th>Budgeting</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="financeTableBody">
+                    <?php
+                    // Expenses
+                    $expenses_result = $conn->query("SELECT date, 'Expense' as transaction_type, amount, category as type, 'Expenses' as account, amount as expenses, 0 as income, 0 as budgeting, description as remarks FROM expenses ORDER BY date DESC LIMIT 20");
+                    // Income
+                    $income_result = $conn->query("SELECT date, 'Income' as transaction_type, amount, source as type, 'Income' as account, 0 as expenses, amount as income, 0 as budgeting, description as remarks FROM income ORDER BY date DESC LIMIT 20");
+                    // Budget
+                    $budget_result = $conn->query("SELECT created_at as date, 'Budget' as transaction_type, allocated as amount, category as type, 'Budget' as account, spent as expenses, allocated as income, allocated as budgeting, CONCAT('Allocated: $', allocated, ' | Spent: $', spent, ' | Remaining: $', remaining) as remarks FROM budget ORDER BY created_at DESC LIMIT 20");
+                    $all_finance_data = [];
+                    if ($expenses_result) while ($row = $expenses_result->fetch_assoc()) $all_finance_data[] = $row;
+                    if ($income_result) while ($row = $income_result->fetch_assoc()) $all_finance_data[] = $row;
+                    if ($budget_result) while ($row = $budget_result->fetch_assoc()) $all_finance_data[] = $row;
+                    usort($all_finance_data, function($a, $b) { return strtotime($b['date']) - strtotime($a['date']); });
+                    $all_finance_data = array_slice($all_finance_data, 0, 50);
+                    ?>
+                    <?php if (!empty($all_finance_data)): ?>
+                        <?php foreach ($all_finance_data as $fin): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($fin['date']) ?></td>
+                            <td><?= htmlspecialchars($fin['transaction_type']) ?></td>
+                            <td><?= htmlspecialchars($fin['amount']) ?></td>
+                            <td><?= htmlspecialchars($fin['type']) ?></td>
+                            <td><?= htmlspecialchars($fin['account']) ?></td>
+                            <td><?= htmlspecialchars($fin['expenses']) ?></td>
+                            <td><?= htmlspecialchars($fin['income']) ?></td>
+                            <td><?= htmlspecialchars($fin['budgeting']) ?></td>
+                            <td><?= htmlspecialchars($fin['remarks']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="9" style="text-align:center;">No finance records found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <div class="pagination" id="financePagination"></div>
+        </div>
+    </div>
+    <!-- Human Resources Report Section -->
+    <div id="historyHRSection" style="display:none;">
+        <h3>Human Resources Report</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Position</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Last Action</th>
+                    </tr>
+                </thead>
+                <tbody id="hrTableBody">
+                    <?php
+                    $result_hrs = $conn->query("SELECT name, position, department, status, last_action FROM hr_history ORDER BY last_action DESC LIMIT 50");
+                    if ($result_hrs && $result_hrs->num_rows > 0):
+                        while ($hr = $result_hrs->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($hr['name']) ?></td>
+                        <td><?= htmlspecialchars($hr['position']) ?></td>
+                        <td><?= htmlspecialchars($hr['department']) ?></td>
+                        <td><?= htmlspecialchars($hr['status']) ?></td>
+                        <td><?= htmlspecialchars($hr['last_action']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="5" style="text-align:center;">No Human Resources records found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <div class="pagination" id="hrPagination"></div>
+        </div>
+    </div>
+    <!-- Inventory History Section -->
+    <div id="historyInventorySection" style="display:none;">
+        <h3>Inventory Report</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Stock</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $result_inv = $conn->query("SELECT product_name, stock, stock_in, stock_out, status FROM inventory_history ORDER BY product_name ASC LIMIT 50");
+                    if ($result_inv && $result_inv->num_rows > 0):
+                        while ($inv = $result_inv->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($inv['product_name']) ?></td>
+                        <td><?= htmlspecialchars($inv['stock']) ?></td>
+                        <td><?= htmlspecialchars($inv['stock_in']) ?></td>
+                        <td><?= htmlspecialchars($inv['stock_out']) ?></td>
+                        <td><?= htmlspecialchars($inv['status']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="5" style="text-align:center;">No inventory records found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <div class="pagination" id="inventoryPagination"></div>
+        </div>
+    </div>
+    <!-- Customer Feedback History Section -->
+    <div id="historyFeedbackSection" style="display:none;">
+        <h3>Customer Feedback History</h3>
+        <div class="report-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Feedback</th>
+                        <th>Rating</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    <?php
+                    $result_fb_hist = $conn->query("SELECT date, customer_name, email, feedback, rating, status, action FROM customer_feedback_history ORDER BY date DESC LIMIT 50");
+                    if ($result_fb_hist && $result_fb_hist->num_rows > 0):
+                        while ($fh = $result_fb_hist->fetch_assoc()):
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($fh['date']) ?></td>
+                        <td><?= htmlspecialchars($fh['customer_name']) ?></td>
+                        <td><?= htmlspecialchars($fh['email']) ?></td>
+                        <td><?= htmlspecialchars($fh['feedback']) ?></td>
+                        <td><?= htmlspecialchars($fh['rating']) ?></td>
+                        <td><?= htmlspecialchars($fh['status']) ?></td>
+                        <td><?= htmlspecialchars($fh['action']) ?></td>
+                    </tr>
+                    <?php endwhile; else: ?>
+                    <tr><td colspan="7" style="text-align:center;">No feedback history records found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <div class="pagination" id="feedbackPagination"></div>
+        </div>
+    </div>
+</div>
             </div>
         </div>
     </div>
-
-    <!-- Add Employee Modal -->
-    <div id="addEmployeeModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;">
-        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:1rem; width:350px; margin:5% auto;">
-            <form id="employeeForm" enctype="multipart/form-data">
-                <h3>Add Employee</h3>
-                <label>Full Name:</label>
-                <input type="text" name="name" required>
-                <label>Position:</label>
-                <input type="text" name="position" required>
-                <label>Department:</label>
-                <input type="text" name="department" required>
-                <label>Date Hired:</label>
-                <input type="date" name="date_hired" required>
-                <label>Employment Type:</label>
-                <input type="text" name="employment_type" required>
-                <label>Status:</label>
-                <select name="status" required>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
-                <label>Contact:</label>
-                <input type="text" name="contact">
-                <label>Email:</label>
-                <input type="email" name="email">
-                <div style="margin-top:0.5rem;">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-outline" onclick="closeModal('addEmployeeModal')">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add Applicant Modal -->
-    <div id="addApplicantModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;">
-        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:1rem; width:350px; margin:5% auto;">
-            <form id="applicantForm" enctype="multipart/form-data">
-                <h3>Add Applicant</h3>
-                <label>Full Name:</label>
-                <input type="text" name="name" required>
-                <label>Position Applied:</label>
-                <input type="text" name="position_applied" required>
-                <label>Date Applied:</label>
-                <input type="date" name="date_applied" required>
-                <label>Status:</label>
-                <select name="status" required>
-                    <option value="Screening">Screening</option>
-                    <option value="Interview">Interview</option>
-                    <option value="Hired">Hired</option>
-                    <option value="Rejected">Rejected</option>
-                </select>
-                <label>Contact:</label>
-                <input type="text" name="contact">
-                <label>Email:</label>
-                <input type="email" name="email">
-                <label>Resume/CV:</label>
-                <input type="file" name="resume" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                <label>Assigned HR:</label>
-                <input type="text" name="assigned_hr">
-                <div style="margin-top:0.5rem;">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-outline" onclick="closeModal('addApplicantModal')">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- HR Leave Type "Others" Modal -->
-    <div id="leaveTypeOthersModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;">
-        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:1rem; width:350px; margin:5% auto;">
-            <form id="leaveTypeOthersForm">
-                <h3>Specify Other Leave Type</h3>
-                <label>Leave Type:</label>
-                <input type="text" name="other_leave_type" id="otherLeaveTypeInput" required>
-                <label>Reason/Details:</label>
-                <textarea name="other_leave_reason" id="otherLeaveReasonInput" rows="3" required></textarea>
-                <div style="margin-top:0.5rem;">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-outline" onclick="closeModal('leaveTypeOthersModal')">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    <!-- Reports-specific modals go here -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="assets/js/script.js"></script>
     <script>
-        // Initialize sidebar functionality
-        document.addEventListener('DOMContentLoaded', function () {
-            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-            const sidebar = document.querySelector('.sidebar');
-            const supplyChainDropdown = document.getElementById('supplyChainDropdown');
-            const supplyChainDropdownMenu = document.getElementById('supplyChainDropdownMenu');
-
-            // Mobile menu toggle
-            if (mobileMenuToggle) {
-                mobileMenuToggle.addEventListener('click', function () {
-                    sidebar.classList.toggle('active');
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if(logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); 
                 });
             }
 
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function (event) {
-                if (sidebar && sidebar.classList.contains('active')) {
-                    if (!sidebar.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
-                        sidebar.classList.remove('active');
-                    }
-                }
-            });
-
-            // Supply Chain dropdown functionality
+            // Dropdown functionality
+            const supplyChainDropdown = document.getElementById('supplyChainDropdown');
+            const supplyChainDropdownMenu = document.getElementById('supplyChainDropdownMenu');
+            
             if (supplyChainDropdown) {
-                supplyChainDropdown.addEventListener('click', function () {
+                supplyChainDropdown.addEventListener('click', function() {
                     supplyChainDropdownMenu.classList.toggle('active');
                 });
             }
 
-            // Handle window resize
-            function handleResize() {
-                if (window.innerWidth > 768) {
-                    sidebar.classList.remove('active');
-                }
-            }
+            // Show/hide report sections based on report type
+            const reportType = document.getElementById('reportType');
+            const inventorySection = document.getElementById('inventorySummarySection');
+            const transactionSection = document.getElementById('transactionLogSection');
+            const monthlySummarySection = document.getElementById('monthlySummarySection');
+            const lowStockSection = document.getElementById('lowStockSection');
 
-            window.addEventListener('resize', handleResize);
-            handleResize();
-
-            // Employee search functionality
-            const employeeSearch = document.getElementById('employeeSearch');
-            const positionFilter = document.getElementById('positionFilter');
-            const statusFilter = document.getElementById('statusFilter');
-            const clearFilters = document.getElementById('clearFilters');
-            const employeeRows = document.querySelectorAll('tbody tr');
-
-            function filterEmployees() {
-                const searchTerm = employeeSearch.value.toLowerCase();
-                const positionValue = positionFilter.value;
-                const statusValue = statusFilter.value;
-
-                employeeRows.forEach(row => {
-                    const name = row.querySelector('.employee-name').textContent.toLowerCase();
-                    const position = row.querySelector('.employee-position').textContent;
-                    const status = row.querySelector('.employee-status').textContent;
-                    const employeeId = row.querySelector('.employee-id').textContent.toLowerCase();
-
-                    const matchesSearch = name.includes(searchTerm) || employeeId.includes(searchTerm);
-                    const matchesPosition = !positionValue || position === positionValue;
-                    const matchesStatus = !statusValue || status === statusValue;
-
-                    if (matchesSearch && matchesPosition && matchesStatus) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-
-            employeeSearch.addEventListener('input', filterEmployees);
-            positionFilter.addEventListener('change', filterEmployees);
-            statusFilter.addEventListener('change', filterEmployees);
-
-            clearFilters.addEventListener('click', function () {
-                employeeSearch.value = '';
-                positionFilter.value = '';
-                statusFilter.value = '';
-                filterEmployees();
-            });
-
-            // Action button handlers
-            document.querySelectorAll('.action-btn.view').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const employeeId = this.getAttribute('data-id');
-                    alert(`View details for employee: ${employeeId}`);
-                });
-            });
-
-            document.querySelectorAll('.action-btn.edit').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const employeeId = this.getAttribute('data-id');
-                    alert(`Edit employee: ${employeeId}`);
-                });
-            });
-
-            document.querySelectorAll('.action-btn.delete').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const employeeId = this.getAttribute('data-id');
-                    const employeeName = this.getAttribute('data-name');
-                    if (confirm(`Are you sure you want to delete employee ${employeeName} (${employeeId})?`)) {
-                        alert(`Employee ${employeeName} deleted successfully`);
-                    }
-                });
-            });
-
-            // Modal helpers
-            function openModal(modalId) {
-                document.getElementById(modalId).style.display = 'block';
-            }
-            function closeModal(modalId) {
-                document.getElementById(modalId).style.display = 'none';
-            }
-
-            // Add Employee button
-            document.getElementById('addEmployeeBtn').addEventListener('click', function () {
-                openModal('addEmployeeModal');
-            });
-            // Add Applicant button
-            document.getElementById('addApplicantBtn').addEventListener('click', function () {
-                openModal('addApplicantModal');
-            });
-
-            // Prevent form submit (demo only)
-            document.getElementById('employeeForm').onsubmit = function(e){e.preventDefault();closeModal('addEmployeeModal');alert('Saved (demo only)');};
-            document.getElementById('applicantForm').onsubmit = function(e){e.preventDefault();closeModal('addApplicantModal');alert('Saved (demo only)');};
-
-            // Recruitment Management search/filter
-            const applicantSearch = document.getElementById('applicantSearch');
-            const applicantStatusFilter = document.getElementById('applicantStatusFilter');
-            const clearApplicantFilters = document.getElementById('clearApplicantFilters');
-            const applicantRows = document.querySelectorAll('#sectionRecruitment tbody tr');
-
-            function filterApplicants() {
-                const searchTerm = applicantSearch.value.toLowerCase();
-                const statusValue = applicantStatusFilter.value;
-                applicantRows.forEach(row => {
-                    const name = row.children[1].textContent.toLowerCase();
-                    const status = row.children[4].textContent;
-                    const id = row.children[0].textContent.toLowerCase();
-                    const matchesSearch = name.includes(searchTerm) || id.includes(searchTerm);
-                    const matchesStatus = !statusValue || status === statusValue;
-                    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
-                });
-            }
-            if (applicantSearch) applicantSearch.addEventListener('input', filterApplicants);
-            if (applicantStatusFilter) applicantStatusFilter.addEventListener('change', filterApplicants);
-            if (clearApplicantFilters) clearApplicantFilters.addEventListener('click', function () {
-                applicantSearch.value = '';
-                applicantStatusFilter.value = '';
-                filterApplicants();
-            });
-
-            // HR Functions search/filter
-            const hrSearch = document.getElementById('hrSearch');
-            const hrStatusFilter = document.getElementById('hrStatusFilter');
-            const clearHRFilters = document.getElementById('clearHRFilters');
-            const hrRows = document.querySelectorAll('#sectionHRFunctions tbody tr');
-
-            function filterHRFunctions() {
-                const searchTerm = hrSearch.value.toLowerCase();
-                const statusValue = hrStatusFilter.value;
-                hrRows.forEach(row => {
-                    const name = row.children[1].textContent.toLowerCase();
-                    const status = row.children[5].textContent;
-                    const id = row.children[0].textContent.toLowerCase();
-                    const matchesSearch = name.includes(searchTerm) || id.includes(searchTerm);
-                    const matchesStatus = !statusValue || status === statusValue;
-                    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
-                });
-            }
-            if (hrSearch) hrSearch.addEventListener('input', filterHRFunctions);
-            if (hrStatusFilter) hrStatusFilter.addEventListener('change', filterHRFunctions);
-            if (clearHRFilters) clearHRFilters.addEventListener('click', function () {
-                hrSearch.value = '';
-                hrStatusFilter.value = '';
-                filterHRFunctions();
-            });
-
-            // Category switching logic
-            const btnEmployee = document.getElementById('btnEmployee');
-            const btnRecruitment = document.getElementById('btnRecruitment');
-            const btnHRFunctions = document.getElementById('btnHRFunctions');
-            const btnActivityLog = document.getElementById('btnActivityLog');
-            const sectionEmployee = document.getElementById('sectionEmployee');
-            const sectionRecruitment = document.getElementById('sectionRecruitment');
-            const sectionHRFunctions = document.getElementById('sectionHRFunctions');
-            const sectionActivityLog = document.getElementById('sectionActivityLog');
-
-            function showSection(section) {
-                sectionEmployee.classList.remove('active');
-                sectionRecruitment.classList.remove('active');
-                sectionHRFunctions.classList.remove('active');
-                sectionActivityLog.style.display = 'none';
-                btnEmployee.classList.remove('active');
-                btnRecruitment.classList.remove('active');
-                btnHRFunctions.classList.remove('active');
-                btnActivityLog.classList.remove('active');
-                if (section === sectionActivityLog) {
-                    sectionActivityLog.style.display = 'block';
+            function updateReportSection() {
+                inventorySection.style.display = 'none';
+                transactionSection.style.display = 'none';
+                monthlySummarySection.style.display = 'none';
+                lowStockSection.style.display = 'none';
+                if (reportType.value === 'transactions') {
+                    transactionSection.style.display = '';
+                } else if (reportType.value === 'monthly') {
+                    monthlySummarySection.style.display = '';
+                } else if (reportType.value === 'lowstock') {
+                    lowStockSection.style.display = '';
                 } else {
-                    section.classList.add('active');
+                    inventorySection.style.display = '';
+                }
+            }
+            if (reportType) {
+                reportType.addEventListener('change', updateReportSection);
+                updateReportSection();
+            }
+
+            // Custom range functionality for inventory reports
+            const reportPeriod = document.getElementById('reportPeriod');
+            const customRangeGroups = document.querySelectorAll('#inventoryReportContent .custom-range');
+            
+            // Custom range functionality for history reports
+            const historyReportPeriod = document.getElementById('historyReportPeriod');
+            const historyCustomRangeGroups = document.querySelectorAll('#historyReportContent .custom-range');
+            
+            function toggleCustomRange() {
+                if (reportPeriod.value === 'custom') {
+                    customRangeGroups.forEach(group => group.style.display = 'flex');
+                } else {
+                    customRangeGroups.forEach(group => group.style.display = 'none');
+                }
+            }
+            
+            if (reportPeriod) {
+                reportPeriod.addEventListener('change', toggleCustomRange);
+                toggleCustomRange();
+            }
+
+            // Show/hide history report sections based on dropdown
+            const historyType = document.getElementById('historyReportType');
+            const historyFinance = document.getElementById('historyFinanceSection');
+            const historyHR = document.getElementById('historyHRSection');
+            const historyInventory = document.getElementById('historyInventorySection');
+            const historyFeedback = document.getElementById('historyFeedbackSection');
+
+            function updateHistorySection() {
+                historyFinance.style.display = 'none';
+                historyHR.style.display = 'none';
+                historyInventory.style.display = 'none';
+                historyFeedback.style.display = 'none';
+                if (historyType.value === 'finances') {
+                    historyFinance.style.display = '';
+                } else if (historyType.value === 'hr') {
+                    historyHR.style.display = '';
+                } else if (historyType.value === 'inventory') {
+                    historyInventory.style.display = '';
+                } else if (historyType.value === 'feedback') {
+                    historyFeedback.style.display = '';
+                }
+            }
+            if (historyType) {
+                historyType.addEventListener('change', updateHistorySection);
+                updateHistorySection();
+            }
+
+            // Function to update filter button appearance
+            function updateFilterButtonAppearance(accountType) {
+                const filterSelect = document.getElementById('accountTypeFilter');
+                if (filterSelect) {
+                    if (accountType === 'all') {
+                        filterSelect.style.borderColor = '#d1d5db';
+                        filterSelect.style.backgroundColor = 'white';
+                    } else {
+                        filterSelect.style.borderColor = '#2563eb';
+                        filterSelect.style.backgroundColor = '#f0f9ff';
+                    }
                 }
             }
 
-            btnEmployee.addEventListener('click', function () {
-                showSection(sectionEmployee);
-                btnEmployee.classList.add('active');
-            });
+            // Add change event listener to the period dropdown
+            if (historyReportPeriod) {
+                historyReportPeriod.addEventListener('change', function() {
+                    const period = this.value;
+                    
+                    // If custom range is selected, show the custom date inputs
+                    if (period === 'custom') {
+                    historyCustomRangeGroups.forEach(group => group.style.display = 'flex');
+                        // Don't filter immediately for custom range - wait for date selection
+                } else {
+                    historyCustomRangeGroups.forEach(group => group.style.display = 'none');
+                        // Apply period filter and then account type filter
+                        filterFinanceDataByPeriod(period);
+                        // Apply account type filter to the period-filtered results
+                        const accountType = accountTypeFilter.value;
+                        if (accountType !== 'all') {
+                            filterFinanceData(accountType);
+                        }
+                    }
+                });
+            }
 
-            btnRecruitment.addEventListener('click', function () {
-                showSection(sectionRecruitment);
-                btnRecruitment.classList.add('active');
-            });
+            // Custom date range filtering functionality
+            const historyReportDateFrom = document.getElementById('historyReportDateFrom');
+            const historyReportDateTo = document.getElementById('historyReportDateTo');
 
-            btnHRFunctions.addEventListener('click', function () {
-                showSection(sectionHRFunctions);
-                btnHRFunctions.classList.add('active');
-            });
-
-            btnActivityLog.addEventListener('click', function () {
-                showSection(sectionActivityLog);
-                btnActivityLog.classList.add('active');
-            });
-
-            // Function to update leave type
-            function updateLeaveType(selectElement, employeeId) {
-                const newLeaveType = selectElement.value;
-                // Here you would typically make an AJAX call to update the database
-                console.log(`Updating leave type for employee ${employeeId} to ${newLeaveType}`);
+            function filterFinanceDataByCustomDate() {
+                const fromDate = historyReportDateFrom.value;
+                const toDate = historyReportDateTo.value;
                 
-                // Example AJAX call (uncomment and implement when ready):
-                /*
-                fetch('update_leave_type.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        employee_id: employeeId,
-                        leave_type: newLeaveType
-                    })
-                })
-                .then(response => response.json())
-                .then data => {
-                    if (data.success) {
-                        alert('Leave type updated successfully');
-                    } else {
-                        alert('Error updating leave type');
-                        // Optionally revert the selection
+                if (!fromDate || !toDate) return;
+                
+                const tableRows = document.querySelectorAll('#historyFinanceSection tbody tr');
+                const startDate = new Date(fromDate);
+                const endDate = new Date(toDate);
+                
+                // Set time to end of day for end date to include the full day
+                endDate.setHours(23, 59, 59, 999);
+                
+                tableRows.forEach(row => {
+                    const dateCell = row.cells[0].textContent.trim();
+                    const rowDate = new Date(dateCell);
+                    
+                    if (isNaN(rowDate.getTime())) {
+                        row.style.display = 'none';
+                        return;
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error updating leave type');
-                    // Optionally revert the selection
+                    
+                    // Show rows within the custom date range
+                    const shouldShow = rowDate >= startDate && rowDate <= endDate;
+                    row.style.display = shouldShow ? '' : 'none';
                 });
-                */
-            }
-
-            function handleLeaveTypeChange(select, employeeId) {
-                var box = select.parentNode.querySelector('.leave-type-other-box');
-                if (select.value === 'Others') {
-                    box.style.display = 'inline-block';
-                    box.querySelector('.leave-type-other').focus();
-                } else {
-                    box.style.display = 'none';
-                    // Optionally update leave type via AJAX here
+                
+                // After custom date filtering, apply account type filter if needed
+                const accountType = accountTypeFilter.value;
+                if (accountType !== 'all') {
+                    filterFinanceData(accountType);
                 }
             }
 
-            function saveOtherLeaveType(employeeId) {
-                var input = document.getElementById('leaveTypeOtherInput_' + employeeId);
-                var customType = input.value;
-                // Optionally update leave type via AJAX here
-                alert('Other leave type saved: ' + customType);
+            // Add event listeners for custom date inputs
+            if (historyReportDateFrom && historyReportDateTo) {
+                historyReportDateFrom.addEventListener('change', function() {
+                    if (historyReportPeriod.value === 'custom') {
+                        filterFinanceDataByCustomDate();
+                    }
+                });
+                
+                historyReportDateTo.addEventListener('change', function() {
+                    if (historyReportPeriod.value === 'custom') {
+                        filterFinanceDataByCustomDate();
+                    }
+                });
             }
 
-            function cancelOtherLeaveType(employeeId) {
-                var box = document.getElementById('leaveTypeOtherInput_' + employeeId).parentNode;
-                box.style.display = 'none';
-                // Optionally reset dropdown to default
+            // Set default dates for custom range (current month)
+            if (historyReportDateFrom && historyReportDateTo) {
+                const today = new Date();
+                const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                
+                historyReportDateFrom.value = firstDayOfMonth.toISOString().split('T')[0];
+                historyReportDateTo.value = lastDayOfMonth.toISOString().split('T')[0];
             }
 
-            // Show modal when clicking the "Others" input
-            // Already handled by onclick="openModal('leaveTypeOthersModal')"
+            // Account Classification Filter Functionality
+            const accountTypeFilter = document.getElementById('accountTypeFilter');
+            
+            function filterFinanceData(accountType) {
+                const tableRows = document.querySelectorAll('#historyFinanceSection tbody tr');
+                tableRows.forEach((row) => {
+                    const transactionType = row.cells[1].textContent.trim().toLowerCase();
+                    let shouldShow = false;
+                    if (accountType === 'all') {
+                        shouldShow = true;
+                    } else if (accountType === 'expenses' && transactionType === 'expense') {
+                        shouldShow = true;
+                    } else if (accountType === 'income' && transactionType === 'income') {
+                        shouldShow = true;
+                    } else if (accountType === 'budget' && transactionType === 'budget') {
+                        shouldShow = true;
+                    }
+                    row.style.display = shouldShow ? '' : 'none';
+                });
+            }
 
-            document.getElementById('leaveTypeOthersForm').onsubmit = function(e){
-                e.preventDefault();
-                var leaveType = document.getElementById('otherLeaveTypeInput').value;
-                var reason = document.getElementById('otherLeaveReasonInput').value;
-                // Optionally update leave type and reason via AJAX here
-                closeModal('leaveTypeOthersModal');
-                alert('Other leave type saved: ' + leaveType + '\nReason: ' + reason);
-            };
-        });
-    </script>
+            // Add change event listener to the account type filter
+            if (accountTypeFilter) {
+                accountTypeFilter.addEventListener('change', function() {
+                    filterFinanceData(this.value);
+                });
+            }
+
+            // Test function to debug filtering
+            function testFilter() {
+                console.log('=== TESTING FILTER ===');
+                
+                // Check if finance section is visible
+                const financeSection = document.getElementById('historyFinanceSection');
+                console.log('Finance section visible:', financeSection.style.display !== 'none');
+                
+                // Check table rows
+                const tableRows = document.querySelectorAll('#historyFinanceSection tbody tr');
+                console.log('Total table rows found:', tableRows.length);
+                
+                // Check first few rows for data
+                tableRows.forEach((row, index) => {
+                    if (index < 3) { // Only check first 3 rows
+                        const cells = row.cells;
+                        console.log(`Row ${index}:`, {
+                            date: cells[0]?.textContent?.trim(),
+                            transaction: cells[1]?.textContent?.trim(),
+                            amount: cells[2]?.textContent?.trim(),
+                            type: cells[3]?.textContent?.trim(),
+                            account: cells[4]?.textContent?.trim()
+                        });
+                    }
+                });
+                
+                // Test the filter manually
+                console.log('Testing filter manually...');
+                filterFinanceData('expenses');
+            }
+            
+            // Function to reset all filters and show all rows
+            function resetAllFilters() {
+                const tableRows = document.querySelectorAll('#historyFinanceSection tbody tr');
+                tableRows.forEach(row => {
+                    row.style.display = '';
+                });
+                console.log('All filters reset - showing all rows');
+            }
+
+            // Clear button functionality for finance filters
+            const clearFinanceFiltersBtn = document.getElementById('clearFinanceFiltersBtn');
+            function resetAllFinanceFilters() {
+                if (accountTypeFilter) accountTypeFilter.value = 'all';
+                // Show all rows
+                const tableRows = document.querySelectorAll('#historyFinanceSection tbody tr');
+                tableRows.forEach(row => {
+                    row.style.display = '';
+                });
+            }
+            if (clearFinanceFiltersBtn) {
+                clearFinanceFiltersBtn.addEventListener('click', function() {
+                    resetAllFinanceFilters();
+                });
+            }
+
+            // Make "Generate Report" button functional for History Report
+            document.getElementById('generateHistoryReportBtn').addEventListener('click', function() {
+        // Get selected report type and period
+        var reportType = document.getElementById('historyReportType').value;
+        var reportPeriod = document.getElementById('historyReportPeriod').value;
+        var fromDate = document.getElementById('historyReportDateFrom').value;
+        var toDate = document.getElementById('historyReportDateTo').value;
+
+        // Show the correct section
+        var sections = {
+            finances: document.getElementById('historyFinanceSection'),
+            hr: document.getElementById('historyHRSection'),
+            inventory: document.getElementById('historyInventorySection'),
+            feedback: document.getElementById('historyFeedbackSection')
+        };
+        Object.values(sections).forEach(function(sec) { sec.style.display = 'none'; });
+        if (sections[reportType]) sections[reportType].style.display = '';
+
+        // Filter rows by period (for finance section only)
+        if (reportType === 'finances') {
+            var tableRows = document.querySelectorAll('#historyFinanceSection tbody tr');
+            var currentDate = new Date();
+            tableRows.forEach(function(row) {
+                var dateCell = row.cells[0].textContent.trim();
+                var rowDate = new Date(dateCell);
+                var show = true;
+                if (reportPeriod === 'today') {
+                    show = rowDate.toDateString() === currentDate.toDateString();
+                } else if (reportPeriod === 'week') {
+                    var weekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    show = rowDate >= weekAgo;
+                } else if (reportPeriod === 'month') {
+                    var monthAgo = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                    show = rowDate >= monthAgo;
+                } else if (reportPeriod === 'quarter') {
+                    var quarterStart = new Date(currentDate.getFullYear(), Math.floor(currentDate.getMonth() / 3) * 3, 1);
+                    show = rowDate >= quarterStart;
+                } else if (reportPeriod === 'year') {
+                    var yearStart = new Date(currentDate.getFullYear(), 0, 1);
+                    show = rowDate >= yearStart;
+                } else if (reportPeriod === 'custom') {
+                    var startDate = new Date(fromDate);
+                    var endDate = new Date(toDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    show = rowDate >= startDate && rowDate <= endDate;
+                }
+                row.style.display = show ? '' : 'none';
+            });
+        }
+        // You can add similar filtering for other sections if needed
+    });
+
+    // Pagination logic for tables
+    function paginateTable(tbodyId, paginationId, rowsPerPage = 10) {
+        const tbody = document.getElementById(tbodyId);
+        const pagination = document.getElementById(paginationId);
+        if (!tbody || !pagination) return;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        let currentPage = 1;
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+        function showPage(page) {
+            currentPage = page;
+            rows.forEach((row, idx) => {
+                row.style.display = (idx >= (page - 1) * rowsPerPage && idx < page * rowsPerPage) ? '' : 'none';
+            });
+            renderPagination();
+        }
+
+        function renderPagination() {
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+            // Prev button
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = 'Prev';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => showPage(currentPage - 1);
+            pagination.appendChild(prevBtn);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                if (i === currentPage) btn.classList.add('active');
+                btn.onclick = () => showPage(i);
+                pagination.appendChild(btn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Next';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => showPage(currentPage + 1);
+            pagination.appendChild(nextBtn);
+        }
+
+        showPage(1);
+    }
+
+    // Initialize pagination for all tables
+    paginateTable('financeTableBody', 'financePagination', 10);
+    paginateTable('hrTableBody', 'hrPagination', 10);
+    paginateTable('inventoryTableBody', 'inventoryPagination', 10);
+    paginateTable('feedbackTableBody', 'feedbackPagination', 10);
+
+    // ...existing code...
+});
+</script>
 </body>
-
 </html>
