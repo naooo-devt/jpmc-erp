@@ -19,33 +19,6 @@ $role = htmlspecialchars($_SESSION['role']);
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="images/logo.png">
-    <!-- Add this style for pagination controls -->
-    <style>
-        .pagination {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin: 0.5rem 0;
-            gap: 0.3rem;
-        }
-        .pagination button {
-            padding: 0.2rem 0.7rem;
-            border-radius: 4px;
-            border: 1px solid #d1d5db;
-            background: #fff;
-            color: #2563eb;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .pagination button.active {
-            background: #2563eb;
-            color: #fff;
-        }
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-    </style>
 </head>
 <body>
     <!-- Sidebar Navigation -->
@@ -442,7 +415,7 @@ $role = htmlspecialchars($_SESSION['role']);
                         <th>Remarks</th>
                     </tr>
                 </thead>
-                <tbody id="financeTableBody">
+                <tbody>
                     <?php
                     // Expenses
                     $expenses_result = $conn->query("SELECT date, 'Expense' as transaction_type, amount, category as type, 'Expenses' as account, amount as expenses, 0 as income, 0 as budgeting, description as remarks FROM expenses ORDER BY date DESC LIMIT 20");
@@ -476,7 +449,6 @@ $role = htmlspecialchars($_SESSION['role']);
                     <?php endif; ?>
                 </tbody>
             </table>
-            <div class="pagination" id="financePagination"></div>
         </div>
     </div>
     <!-- Human Resources Report Section -->
@@ -493,7 +465,7 @@ $role = htmlspecialchars($_SESSION['role']);
                         <th>Last Action</th>
                     </tr>
                 </thead>
-                <tbody id="hrTableBody">
+                <tbody>
                     <?php
                     $result_hrs = $conn->query("SELECT name, position, department, status, last_action FROM hr_history ORDER BY last_action DESC LIMIT 50");
                     if ($result_hrs && $result_hrs->num_rows > 0):
@@ -511,7 +483,6 @@ $role = htmlspecialchars($_SESSION['role']);
                     <?php endif; ?>
                 </tbody>
             </table>
-            <div class="pagination" id="hrPagination"></div>
         </div>
     </div>
     <!-- Inventory History Section -->
@@ -546,7 +517,6 @@ $role = htmlspecialchars($_SESSION['role']);
                     <?php endif; ?>
                 </tbody>
             </table>
-            <div class="pagination" id="inventoryPagination"></div>
         </div>
     </div>
     <!-- Customer Feedback History Section -->
@@ -565,7 +535,7 @@ $role = htmlspecialchars($_SESSION['role']);
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="feedbackTableBody">
+                <tbody>
                     <?php
                     $result_fb_hist = $conn->query("SELECT date, customer_name, email, feedback, rating, status, action FROM customer_feedback_history ORDER BY date DESC LIMIT 50");
                     if ($result_fb_hist && $result_fb_hist->num_rows > 0):
@@ -585,7 +555,6 @@ $role = htmlspecialchars($_SESSION['role']);
                     <?php endif; ?>
                 </tbody>
             </table>
-            <div class="pagination" id="feedbackPagination"></div>
         </div>
     </div>
 </div>
@@ -924,59 +893,6 @@ $role = htmlspecialchars($_SESSION['role']);
         }
         // You can add similar filtering for other sections if needed
     });
-
-    // Pagination logic for tables
-    function paginateTable(tbodyId, paginationId, rowsPerPage = 10) {
-        const tbody = document.getElementById(tbodyId);
-        const pagination = document.getElementById(paginationId);
-        if (!tbody || !pagination) return;
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        let currentPage = 1;
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-        function showPage(page) {
-            currentPage = page;
-            rows.forEach((row, idx) => {
-                row.style.display = (idx >= (page - 1) * rowsPerPage && idx < page * rowsPerPage) ? '' : 'none';
-            });
-            renderPagination();
-        }
-
-        function renderPagination() {
-            pagination.innerHTML = '';
-            if (totalPages <= 1) return;
-            // Prev button
-            const prevBtn = document.createElement('button');
-            prevBtn.textContent = 'Prev';
-            prevBtn.disabled = currentPage === 1;
-            prevBtn.onclick = () => showPage(currentPage - 1);
-            pagination.appendChild(prevBtn);
-
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                const btn = document.createElement('button');
-                btn.textContent = i;
-                if (i === currentPage) btn.classList.add('active');
-                btn.onclick = () => showPage(i);
-                pagination.appendChild(btn);
-            }
-
-            // Next button
-            const nextBtn = document.createElement('button');
-            nextBtn.textContent = 'Next';
-            nextBtn.disabled = currentPage === totalPages;
-            nextBtn.onclick = () => showPage(currentPage + 1);
-            pagination.appendChild(nextBtn);
-        }
-
-        showPage(1);
-    }
-
-    // Initialize pagination for all tables
-    paginateTable('financeTableBody', 'financePagination', 10);
-    paginateTable('hrTableBody', 'hrPagination', 10);
-    paginateTable('inventoryTableBody', 'inventoryPagination', 10);
-    paginateTable('feedbackTableBody', 'feedbackPagination', 10);
 
     // ...existing code...
 });
