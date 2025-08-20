@@ -2154,7 +2154,7 @@ foreach ($expenses as $expense) {
                     
                     // Check if row matches filters
                     const categoryMatch = !categoryFilter || category.includes(categoryFilter);
-                    const statusMatch = !statusFilter || status.includes(statusFilter);
+                    const statusMatch = !statusFilter || status === statusFilter.toLowerCase();
                     const searchMatch = !searchFilter || 
                                     category.includes(searchFilter) ||
                                     description.includes(searchFilter) ||
