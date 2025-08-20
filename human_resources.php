@@ -25,12 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         $stmt->close();
 
-        $stmt = $conn->prepare("INSERT INTO employees (id, name, position, mobile, emp_status, appointed_as, birthdate, civil_status, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO employees (id, name, position, mobile, emp_status, appointed_as, birthdate, civil_status, address, email, height, weight, emergency_contact) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param(
-            "sssssssss",
+            "sssssssssssss",
             $_POST['id'], $_POST['name'], $_POST['position'], $_POST['mobile'],
             $_POST['emp_status'], $_POST['appointed_as'], $_POST['birthdate'],
-            $_POST['civil_status'], $_POST['address']
+            $_POST['civil_status'], $_POST['address'],
+            $_POST['email'], $_POST['height'], $_POST['weight'], $_POST['emergency_contact']
         );
         $stmt->execute();
         echo json_encode(['success' => true]);
@@ -50,12 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             $stmt->close();
         }
-        $stmt = $conn->prepare("UPDATE employees SET id=?, name=?, position=?, mobile=?, emp_status=?, appointed_as=?, birthdate=?, civil_status=?, address=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE employees SET id=?, name=?, position=?, mobile=?, emp_status=?, appointed_as=?, birthdate=?, civil_status=?, address=?, email=?, height=?, weight=?, emergency_contact=? WHERE id=?");
         $stmt->bind_param(
-            "ssssssssss",
+            "ssssssssssssss",
             $_POST['id'], $_POST['name'], $_POST['position'], $_POST['mobile'],
             $_POST['emp_status'], $_POST['appointed_as'], $_POST['birthdate'],
-            $_POST['civil_status'], $_POST['address'], $old_id
+            $_POST['civil_status'], $_POST['address'],
+            $_POST['email'], $_POST['height'], $_POST['weight'], $_POST['emergency_contact'],
+            $old_id
         );
         $stmt->execute();
         echo json_encode(['success' => true]);
@@ -229,10 +232,22 @@ if (!$selected_employee && count($employees) > 0) {
             padding: 25px;
             box-shadow: var(--shadow);
             display: none; /* Initially hidden */
+            max-height: calc(100vh - 160px); /* Add max-height */
+            overflow-y: auto; /* Enable vertical scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: #2563eb #f1f5f9;
         }
-
-        .employee-detail-panel.active {
-            display: block; /* Show when active */
+        /* For Chrome, Edge, Safari */
+        .employee-detail-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .employee-detail-panel::-webkit-scrollbar-thumb {
+            background: #2563eb;
+            border-radius: 8px;
+        }
+        .employee-detail-panel::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
         }
 
         /* Add/Update: HR page navigation buttons */
@@ -580,6 +595,22 @@ if (!$selected_employee && count($employees) > 0) {
                             <div class="detail-label">Address</div>
                             <div class="detail-value"><?php echo htmlspecialchars($selected_employee['address']); ?></div>
                         </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value"><?php echo htmlspecialchars($selected_employee['email'] ?? ''); ?></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Height</div>
+                            <div class="detail-value"><?php echo htmlspecialchars($selected_employee['height'] ?? ''); ?></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Weight</div>
+                            <div class="detail-value"><?php echo htmlspecialchars($selected_employee['weight'] ?? ''); ?></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Emergency Contact</div>
+                            <div class="detail-value"><?php echo htmlspecialchars($selected_employee['emergency_contact'] ?? ''); ?></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -630,6 +661,22 @@ if (!$selected_employee && count($employees) > 0) {
             <div class="modal-form-group">
                 <label class="modal-form-label">Address</label>
                 <input type="text" name="address" class="modal-form-input" id="employeeFormAddress">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-form-label">Email</label>
+                <input type="email" name="email" class="modal-form-input" id="employeeFormEmail">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-form-label">Height</label>
+                <input type="text" name="height" class="modal-form-input" id="employeeFormHeight">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-form-label">Weight</label>
+                <input type="text" name="weight" class="modal-form-input" id="employeeFormWeight">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-form-label">Emergency Contact</label>
+                <input type="text" name="emergency_contact" class="modal-form-input" id="employeeFormEmergencyContact">
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" id="closeModalBtn">Cancel</button>
@@ -697,6 +744,10 @@ if (!$selected_employee && count($employees) > 0) {
             document.getElementById('employeeFormBirthdate').value = emp.birthdate;
             document.getElementById('employeeFormCivilStatus').value = emp.civil_status;
             document.getElementById('employeeFormAddress').value = emp.address;
+            document.getElementById('employeeFormEmail').value = emp.email || '';
+            document.getElementById('employeeFormHeight').value = emp.height || '';
+            document.getElementById('employeeFormWeight').value = emp.weight || '';
+            document.getElementById('employeeFormEmergencyContact').value = emp.emergency_contact || '';
             document.getElementById('addEmployeeModal').classList.add('active');
         }
 
