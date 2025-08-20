@@ -10,47 +10,13 @@ require_once 'db_connect.php';
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
 
-// Create necessary table if it doesn't exist
-$create_accounts_table = "CREATE TABLE IF NOT EXISTS accounts_payable (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    vendor_name VARCHAR(255) NOT NULL,
-    amount DECIMAL(15,2) NOT NULL,
-    due_date DATE NOT NULL,
-    status ENUM('unpaid','paid','overdue') DEFAULT 'unpaid',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)";
-$conn->query($create_accounts_table); // <-- This must run BEFORE the SELECT
-
-// Fetch Accounts Payable Summary
-$payableSummary = [
-    'total' => 0,
-    'dueSoon' => 0,
-    'overdue' => 0
-];
-
-$sql = "
-    SELECT 
-        SUM(amount) AS total,
-        SUM(CASE WHEN due_date >= CURDATE() AND due_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN amount ELSE 0 END) AS dueSoon,
-        SUM(CASE WHEN due_date < CURDATE() THEN amount ELSE 0 END) AS overdue
-    FROM accounts_payable
-";
-$result = $conn->query($sql);
-
-if ($result && $row = $result->fetch_assoc()) {
-    $payableSummary['total'] = $row['total'] ?? 0;
-    $payableSummary['dueSoon'] = $row['dueSoon'] ?? 0;
-    $payableSummary['overdue'] = $row['overdue'] ?? 0;
-}
-
-
 $create_transactions_table = "CREATE TABLE IF NOT EXISTS financial_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     transaction_date DATE NOT NULL,
     category VARCHAR(100) NOT NULL,
     description VARCHAR(255) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    status ENUM('Paid', 'Pending', 'Received') DEFAULT 'Pending',
+    status ENUM('Paid', 'Pending', 'Received', 'Balance', 'Unpaid') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )";
@@ -63,7 +29,7 @@ $create_expenses_table = "CREATE TABLE IF NOT EXISTS expenses (
     description TEXT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     budget DECIMAL(10,2) DEFAULT NULL,
-    status ENUM('Paid', 'Pending') DEFAULT 'Pending',
+    status ENUM('Paid', 'Pending', 'Unpaid', 'Balance') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )";
@@ -118,8 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $category = $_POST['category'];
                 $description = $_POST['description'];
                 $amount = $_POST['amount'];
-                $status = $_POST['status'];
-                
+                $status = $_POST['status'] ?? 'Pending'; // Default to Pending if not provided
+
                 $stmt = $conn->prepare("INSERT INTO expenses (date, category, description, amount, status) VALUES (?, ?, ?, ?, ?)");
                 $stmt->bind_param("sssds", $date, $category, $description, $amount, $status);
                 
@@ -330,8 +296,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Fix null/empty status values across tables so the UI always has a usable status
+$conn->query("UPDATE expenses SET status='Pending' WHERE status IS NULL OR TRIM(status) = ''");
+$conn->query("UPDATE income SET status='Pending' WHERE status IS NULL OR TRIM(status) = ''");
+$conn->query("UPDATE invoices SET status='Draft' WHERE status IS NULL OR TRIM(status) = ''");
+
 // Fetch data from database
-$expenses_query = "SELECT * FROM expenses ORDER BY date DESC";
+$expenses_query = "SELECT id, date, category, description, amount, COALESCE(status, 'Pending') as status FROM expenses ORDER BY date DESC";
 $expenses_result = $conn->query($expenses_query);
 
 // Debug: Check if query was successful
@@ -351,57 +322,67 @@ $invoices_result = $conn->query($invoices_query);
 $budget_query = "SELECT * FROM budget ORDER BY category ASC";
 $budget_result = $conn->query($budget_query);
 
-// Process expenses data
+// Process expenses data (normalize status values so UI never shows blank)
 if ($expenses_result) {
     $expenses = [];
     while ($row = $expenses_result->fetch_assoc()) {
+        $rawStatus = isset($row['status']) ? trim($row['status']) : '';
+        $normalizedStatus = $rawStatus !== '' ? ucfirst(strtolower($rawStatus)) : 'Pending';
+
         $expenses[] = [
             'id' => $row['id'],
             'date' => $row['date'],
             'category' => $row['category'],
             'description' => $row['description'],
             'amount' => $row['amount'],
-            'status' => $row['status']
+            'status' => $normalizedStatus
         ];
     }
     // Debug: Log expenses count and details
     error_log("Expenses loaded: " . count($expenses));
     foreach ($expenses as $index => $expense) {
-        error_log("Expense $index: ID=" . $expense['id'] . ", Description=" . $expense['description']);
+        error_log("Expense $index: ID=" . $expense['id'] . ", Description=" . $expense['description'] . ", Status=" . $expense['status']);
     }
 } else {
     $expenses = [];
     error_log("No expenses found in database");
 }
 
-// Process income data
+// Process income data (normalize status)
 if ($income_result) {
     $income = [];
     while ($row = $income_result->fetch_assoc()) {
+        $rawStatus = isset($row['status']) ? trim($row['status']) : '';
+        $normalizedStatus = $rawStatus !== '' ? ucfirst(strtolower($rawStatus)) : 'Pending';
+
         $income[] = [
             'id' => $row['id'],
             'date' => $row['date'],
             'source' => $row['source'],
             'description' => $row['description'],
             'amount' => $row['amount'],
-            'status' => $row['status']
+            'status' => $normalizedStatus
         ];
     }
 } else {
     $income = [];
 }
 
-// Process invoices data
+// Process invoices data (normalize status)
 if ($invoices_result) {
     $invoices = [];
     while ($row = $invoices_result->fetch_assoc()) {
+        $rawStatus = isset($row['status']) ? trim($row['status']) : '';
+        // invoices default to 'Draft' if empty
+        $normalizedStatus = $rawStatus !== '' ? ucfirst(strtolower($rawStatus)) : 'Draft';
+
         $invoices[] = [
             'id' => $row['id'],
             'invoice_no' => $row['invoice_no'],
             'client' => $row['client'],
             'amount' => $row['amount'],
             'due_date' => $row['due_date'],
-            'status' => $row['status']
+            'status' => $normalizedStatus
         ];
     }
 } else {
@@ -430,6 +411,58 @@ $total_income = array_sum(array_column($income, 'amount'));
 $total_invoices = array_sum(array_column($invoices, 'amount'));
 $total_budget_allocated = array_sum(array_column($budget, 'allocated'));
 $total_budget_spent = array_sum(array_column($budget, 'spent'));
+
+// Calculate insights summary data
+$current_month = date('Y-m');
+$last_month = date('Y-m', strtotime('first day of previous month'));
+
+$insights_data = [
+    'total_expenses' => 0,
+    'total_income' => 0,
+    'monthly_expenses' => 0,
+    'last_month_expenses' => 0,
+    'pending_expenses' => 0,
+    'pending_income' => 0
+];
+
+foreach ($expenses as $expense) {
+    $insights_data['total_expenses'] += $expense['amount'];
+    
+    $expense_month = date('Y-m', strtotime($expense['date']));
+    if ($expense_month === $current_month) {
+        $insights_data['monthly_expenses'] += $expense['amount'];
+    }
+    if ($expense_month === $last_month) {
+        $insights_data['last_month_expenses'] += $expense['amount'];
+    }
+    if ($expense['status'] === 'Pending') {
+        $insights_data['pending_expenses'] += $expense['amount'];
+    }
+}
+
+foreach ($income as $income_item) {
+    $insights_data['total_income'] += $income_item['amount'];
+    if ($income_item['status'] === 'Pending') {
+        $insights_data['pending_income'] += $income_item['amount'];
+    }
+}
+
+// Calculate percentage changes
+$expense_change_percent = $insights_data['last_month_expenses'] > 0 
+    ? (($insights_data['monthly_expenses'] - $insights_data['last_month_expenses']) / $insights_data['last_month_expenses']) * 100 
+    : 0;
+$net_profit = $insights_data['total_income'] - $insights_data['total_expenses'];
+
+// Calculate this month's expenses
+$current_month = date('Y-m');
+$monthly_expenses = 0;
+
+foreach ($expenses as $expense) {
+    $expense_month = date('Y-m', strtotime($expense['date']));
+    if ($expense_month === $current_month) {
+        $monthly_expenses += $expense['amount'];
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -491,33 +524,47 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             <div class="fin-tabs-content active" id="insights">
                 <div class="summary-cards">
                     <?php
-                    // Prepare the data array dynamically
-                    $summary_data = [
-                        [
-                            'title' => 'Total Expenses',
-                            'icon' => 'fas fa-receipt',
-                            'value' => $total_expenses,
-                            'change' => '12.5% from last month',
-                            'change_class' => 'positive'
-                        ],
-                        [
-                            'title' => 'Total Income',
-                            'icon' => 'fas fa-money-bill',
-                            'value' => $total_income,
-                            'change' => '12.5% from last month',
-                            'change_class' => 'positive'
-                        ],
-                        [
-                            'title' => 'Net Profit',
-                            'icon' => 'fas fa-comment-dollar',
-                            'value' => $total_income -$total_expenses,
-                            'change' => '40% of monthly budget',
-                            'change_class' => 'positive'
-                        ]
-                    ];
+                    // Calculate percentage changes
+                    $expense_change_percent = $insights_data['last_month_expenses'] > 0 
+                        ? (($insights_data['monthly_expenses'] - $insights_data['last_month_expenses']) / $insights_data['last_month_expenses']) * 100 
+                        : 0;
+
+                    $income_change_percent = 0; // You'll need to add last_month_income to $insights_data to calculate this
+                    $net_profit = $insights_data['total_income'] - $insights_data['total_expenses'];
+
+                    // Budget percentage (assuming you have budget data)
+                    $budget_usage_percent = $total_budget_allocated > 0 
+                        ? ($total_expenses / $total_budget_allocated) * 100 
+                        : 0;
+
+                        $insights_summary_data = [
+                            [
+                                'title' => 'Total Expenses',
+                                'icon' => 'fas fa-receipt',
+                                'value' => $insights_data['total_expenses'],
+                                'change' => number_format(min(100, abs($expense_change_percent)), 1) . '% ' . 
+                                        ($expense_change_percent >= 0 ? 'increase' : 'decrease') . ' from last month',
+                                'change_class' => $expense_change_percent >= 0 ? 'positive' : 'negative'
+                            ],
+                            [
+                                'title' => 'Total Income',
+                                'icon' => 'fas fa-money-bill',
+                                'value' => $insights_data['total_income'],
+                                'change' => number_format(min(100, abs($income_change_percent)), 1) . '% ' . 
+                                        ($income_change_percent >= 0 ? 'increase' : 'decrease') . ' from last month',
+                                'change_class' => $income_change_percent >= 0 ? 'positive' : 'negative'
+                            ],
+                            [
+                                'title' => 'Net Profit',
+                                'icon' => 'fas fa-comment-dollar',
+                                'value' => $net_profit,
+                                'change' => number_format(min(100, $budget_usage_percent), 1) . '% of budget used',
+                                'change_class' => $net_profit >= 0 ? 'positive' : 'negative'
+                            ]
+                        ];
                     ?>
 
-                    <?php foreach ($summary_data as $card): ?>
+                    <?php foreach ($insights_summary_data as $card): ?>
                         <div class="summary-card">
                             <div class="summary-card-header">
                                 <div class="summary-card-title"><?= $card['title'] ?></div>
@@ -525,8 +572,10 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                             </div>
                             <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
                             <div class="summary-card-change <?= $card['change_class'] ?>">
-                                <?php if (!empty($card['change_class'])): ?>
+                                <?php if ($card['change_class'] === 'positive'): ?>
                                     <i class="fas fa-arrow-up"></i>
+                                <?php elseif ($card['change_class'] === 'negative'): ?>
+                                    <i class="fas fa-arrow-down"></i>
                                 <?php endif; ?>
                                 <span><?= $card['change'] ?></span>
                             </div>
@@ -534,29 +583,16 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                     <?php endforeach; ?>
                 </div>
 
-
-                <!-- Charts & Payable Section -->
-                <div class="charts-section">
-
+                <div class="summary-cards">
                     <!-- Income vs Expenses Chart -->
-                    <div class="exp-inc-chart">
-                        <div class="exp-inc-chart-header">
-                            <div class="exp-inc-chart-title">Monthly Income vs Expenses</div>
-                            <div class="exp-inc-chart-controls">
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-card-title">Monthly Income vs Expenses</div>
+                            <div class="summary-card-controls">
                                 <button class="chart-btn active" data-range="weekly">Weekly</button>
                                 <button class="chart-btn" data-range="monthly">Monthly</button>
                                 <button class="chart-btn" data-range="quarterly">Quarterly</button>
                             </div>
-                        </div>
-                        <div class="chart-placeholder">
-                            <canvas id="exinChart" height="100"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Accounts Payable -->
-                    <div class="exp-inc-chart">
-                        <div class="exp-inc-chart-header">
-                            <div class="exp-inc-chart-title">Accounts Payable</div>
                         </div>
                         <div class="chart-placeholder">
                             <canvas id="exinChart" height="100"></canvas>
@@ -575,23 +611,24 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                 <select class="filter-input" id="transactionTypeFilter">
                                     <option value="">Type</option>
                                     <option value="Income">Income</option>
-                                    <option value="Expenses">Expenses</option>
+                                    <option value="Expense">Expense</option>
                                 </select>
                                 
                                 <select class="filter-input" id="transactionStatusFilter">
                                     <option value="">All Status</option>
                                     <option value="Paid">Paid</option>
                                     <option value="Pending">Pending</option>
+                                    <option value="Unpaid">Unpaid</option>
+                                    <option value="Balance">Balance</option>
                                     <option value="Received">Received</option>
                                 </select>
                                 
-                                <button class="btn-clear" id="clearTransactionFilter">
+                                <button class=" btn btn-clear" id="clearTransactionFilter">
                                     <i class="fas fa-times-circle"></i> Clear
                                 </button>
                             </div>
                         </div>
                     </div>
-
 
                     <!-- Transaction Table -->
                     <div class="table-responsive">
@@ -638,8 +675,13 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                         <td>₱<?= number_format($item['amount'], 2) ?></td>
                                         <td><?= $item['type'] ?></td>
                                         <td>
-                                            <span class="status-badge <?= strtolower($item['status'] ?? 'paid') ?>">
-                                                <?= $item['status'] ?? 'Paid' ?>
+                                            <?php
+                                                $status = trim($item['status'] ?? '');
+                                                if ($status === '') $status = 'Pending';
+                                                $statusClass = strtolower($status);
+                                            ?>
+                                            <span class="status-badge <?= $statusClass ?>">
+                                                <?= ucfirst($status) ?>
                                             </span>
                                         </td>
                                     </tr>
@@ -654,30 +696,45 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             <div class="fin-tabs-content" id="expenses">
                 <div class="summary-cards">
                     <?php
-                    // Prepare the data array dynamically
+                    // Calculate dynamic values first
+                    $pending_payments_count = count(array_filter($expenses, function($e) { 
+                        return $e['status'] === 'Pending'; 
+                    }));
+
+                    $pending_payments_amount = array_sum(array_map(function($expense) { 
+                        return $expense['status'] === 'Pending' ? $expense['amount'] : 0; 
+                    }, $expenses));
+
+                    // Get monthly budget data (assuming you have budget data loaded)
+                    $monthly_budget = array_sum(array_column($budget, 'allocated'));
+                    $monthly_spent = array_sum(array_column($budget, 'spent'));
+                    $budget_usage_percent = $monthly_budget > 0 ? 
+                        min(100, ($monthly_spent / $monthly_budget) * 100) : 0;
+
+                    // Build the summary data (using global totals, not filtered)
                     $expense_summary_data = [
                         [
                             'title' => 'Total Expenses',
                             'icon' => 'fas fa-receipt',
-                            'value' => $total_expenses,
-                            'change' => '12.5% from last month',
-                            'change_class' => 'positive'
+                            'value' => $insights_data['total_expenses'], // This is the global total
+                            'change' => number_format(min(100, abs($expense_change_percent)), 1) . '% ' . 
+                                    ($expense_change_percent >= 0 ? 'increase' : 'decrease') . ' from last month',
+                            'change_class' => $expense_change_percent >= 0 ? 'positive' : 'negative'
                         ],
                         [
                             'title' => 'Pending Payments',
                             'icon' => 'fas fa-clock',
-                            'value' => array_sum(array_map(function($expense) { 
-                                return $expense['status'] === 'Pending' ? $expense['amount'] : 0; 
-                            }, $expenses)),
-                            'change' => '3 payments pending',
-                            'change_class' => ''
+                            'value' => $pending_payments_amount, // This is the global total
+                            'change' => $pending_payments_count . ' payment' . ($pending_payments_count != 1 ? 's' : '') . ' pending',
+                            'change_class' => $pending_payments_count > 0 ? 'warning' : ''
                         ],
                         [
                             'title' => 'This Month',
                             'icon' => 'fas fa-calendar',
-                            'value' => $total_expenses * 0.4,
-                            'change' => '40% of monthly budget',
-                            'change_class' => ''
+                            'value' => $monthly_spent, // This is the global total
+                            'change' => number_format($budget_usage_percent, 1) . '% of monthly budget used',
+                            'change_class' => $budget_usage_percent > 80 ? 'danger' : 
+                                            ($budget_usage_percent > 50 ? 'warning' : '')
                         ]
                     ];
                     ?>
@@ -690,8 +747,10 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                             </div>
                             <div class="summary-card-value">₱<?= number_format($card['value'], 2) ?></div>
                             <div class="summary-card-change <?= $card['change_class'] ?>">
-                                <?php if (!empty($card['change_class'])): ?>
+                                <?php if ($card['change_class'] === 'positive'): ?>
                                     <i class="fas fa-arrow-up"></i>
+                                <?php elseif ($card['change_class'] === 'negative'): ?>
+                                    <i class="fas fa-arrow-down"></i>
                                 <?php endif; ?>
                                 <span><?= $card['change'] ?></span>
                             </div>
@@ -722,9 +781,11 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                     <option value="">All Status</option>
                                     <option value="Paid">Paid</option>
                                     <option value="Pending">Pending</option>
+                                    <option value="Unpaid">Unpaid</option>
+                                    <option value="Balance">Balance</option>
                                 </select>
 
-                                <button class="btn-clear" id="clearExpenseFilters">
+                                <button class="btn btn-clear" id="clearExpenseFilters">
                                     <i class="fas fa-times-circle"></i> Clear
                                 </button>
 
@@ -751,16 +812,8 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                             </thead>
                             <tbody>
                                 <?php
-                                // Sort expenses by date (newest first) and then by ID (newest first)
-                                usort($expenses, function($a, $b) {
-                                    // First compare by date (descending)
-                                    $dateCompare = strtotime($b['date']) - strtotime($a['date']);
-                                    if ($dateCompare !== 0) {
-                                        return $dateCompare;
-                                    }
-                                    // If dates are equal, compare by ID (descending)
-                                    return $b['id'] - $a['id'];
-                                });
+                                // REMOVE the problematic sorting that was here
+                                // Just display expenses in their natural order (by ID, which is sequential)
                                 ?>
 
                                 <?php foreach ($expenses as $expense): ?>
@@ -772,7 +825,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                     <td>₱<?= number_format($expense['amount'], 2) ?></td>
                                     <td>
                                         <span class="status-badge <?= strtolower($expense['status']) ?>">
-                                            <?= $expense['status'] ?>
+                                            <?= ucfirst($expense['status']) ?>
                                         </span>
                                     </td>
                                     <td>
@@ -872,7 +925,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                     <option value="Pending">Pending</option>
                                 </select>
 
-                                <button class="btn-clear" id="clearIncomeFilters">
+                                <button class="btn btn-clear" id="clearIncomeFilters">
                                     <i class="fas fa-times-circle"></i> Clear
                                 </button>
 
@@ -943,11 +996,11 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
 
                 <!-- Income Statement Section -->
                 <div class="finance-table" style="margin-top: 2rem;">
-                    <div class="finance-table-header">
+                    <div class="finance-table-header modern-header">
                         <div class="finance-table-title">Income Statement</div>
                         <div class="finance-table-actions">
                             <div class="filter-group">
-                                <select class="form-input filter-select" id="incomeStatementPeriod">
+                                <select class="filter-input" id="incomeStatementPeriod">
                                     <option value="current">Current Month</option>
                                     <option value="last">Last Month</option>
                                     <option value="quarter">This Quarter</option>
@@ -1225,7 +1278,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                     <?php endforeach; ?>
                                 </select>
 
-                                <button class="btn-clear" id="clearInvoiceFilters">
+                                <button class="btn btn-clear" id="clearInvoiceFilters">
                                     <i class="fas fa-times-circle"></i> Clear
                                 </button>
 
@@ -1251,8 +1304,11 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                             <tbody>
                                 <?php
                                 // Sort invoices by creation date (newest first) to show recent invoices first
+                                // Defensive: some invoice rows may lack 'created_at' key or have empty values.
                                 usort($invoices, function($a, $b) {
-                                    return strtotime($b['created_at']) - strtotime($a['created_at']);
+                                    $ta = !empty($a['created_at']) ? strtotime($a['created_at']) : 0;
+                                    $tb = !empty($b['created_at']) ? strtotime($b['created_at']) : 0;
+                                    return $tb - $ta;
                                 });
                                 
                                 // Counter for sequential invoice numbers
@@ -1261,9 +1317,8 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
 
                                 <?php foreach ($invoices as $invoice): ?>
                                 <?php
-                                // For existing invoices, use their creation year
-                                // For new invoices, use current year
-                                $invoice_year = isset($invoice['created_at']) ? date('Y', strtotime($invoice['created_at'])) : date('Y');
+                                // For existing invoices, use their creation year; otherwise use current year
+                                $invoice_year = !empty($invoice['created_at']) ? date('Y', strtotime($invoice['created_at'])) : date('Y');
                                 $invoice_number = sprintf('INV-%s-%04d', $invoice_year, $invoice_counter++);
                                 ?>
                                 <tr data-invoice-id="<?= $invoice['id'] ?>">
@@ -1377,7 +1432,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                                     <option value="danger">Over 80%</option>
                                 </select>
 
-                                <button class="btn-clear" id="clearBudgetFilters">
+                                <button class="btn btn-clear" id="clearBudgetFilters">
                                     <i class="fas fa-times-circle"></i> Clear
                                 </button>
 
@@ -1499,6 +1554,8 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                         <select id="expenseStatus" name="status" class="form-input" required>
                             <option value="Pending">Pending</option>
                             <option value="Paid">Paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Balance">Balance</option>
                         </select>
                     </div>
                 </div>
@@ -1595,9 +1652,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             <form id="invoiceForm">
                 <input type="hidden" id="invoiceId" name="id">
                 <input type="hidden" name="action" id="invoiceAction" value="add_invoice">
-                
-                <!-- Removed Invoice Number field (will be auto-generated server-side) -->
-                
+                                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="invoiceClient" class="form-label">Client</label>
@@ -1842,16 +1897,6 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                     chart.update();
                 })
                 .catch(err => console.error(err));
-
-            fetch(`get_accounts_payable.php?range=${range}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (document.getElementById('accountsPayableAmount')) {
-                        document.getElementById('accountsPayableAmount').textContent =
-                            `₱${Number(data.amount).toLocaleString()}`;
-                    }
-                })
-                .catch(err => console.error(err));
         }
 
         document.querySelectorAll(".chart-btn").forEach(btn => {
@@ -1863,40 +1908,6 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
         });
 
         updateChart('weekly');
-    });
-    </script>
-
-    <!-- Accounts Payable Section -->
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-    fetch('accounts_payable.php?range=monthly')
-        .then(response => response.json())
-        .then(data => {
-            const ctx = document.getElementById('exinChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Accounts Payable',
-                        data: data.amounts,
-                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        title: {
-                            display: true,
-                            text: 'Outstanding Supplier Invoices'
-                        }
-                    }
-                }
-            });
-        });
     });
     </script>
 
@@ -1974,26 +1985,35 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             // Close mobile menu when clicking outside
             document.addEventListener('click', function(event) {
                 if (sidebar && sidebar.classList.contains('active')) {
-                    if (!sidebar.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
+                    // Guard: mobileMenuToggle may be null (absent in some layouts)
+                    var clickedInsideToggle = mobileMenuToggle && typeof mobileMenuToggle.contains === 'function' && mobileMenuToggle.contains(event.target);
+                    if (!sidebar.contains(event.target) && !clickedInsideToggle) {
                         sidebar.classList.remove('active');
                     }
                 }
             });
 
             // Finance tabs functionality
-            financeTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const targetTab = this.getAttribute('data-tab');
-                    
-                    // Remove active class from all tabs and contents
-                    financeTabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding content
-                    this.classList.add('active');
-                    document.getElementById(targetTab).classList.add('active');
+            console.log('Finance tabs found:', financeTabs.length, 'tab contents:', tabContents.length);
+            if (financeTabs && financeTabs.length > 0 && tabContents && tabContents.length > 0) {
+                financeTabs.forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        const targetTab = this.getAttribute('data-tab');
+
+                        // Remove active class from all tabs and contents
+                        financeTabs.forEach(t => t.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Add active class to clicked tab and corresponding content
+                        this.classList.add('active');
+                        const targetEl = document.getElementById(targetTab);
+                        if (targetEl) targetEl.classList.add('active');
+                        else console.warn('Tab target not found for', targetTab);
+                    });
                 });
-            });
+            } else {
+                console.warn('Finance tabs or contents missing; tab clicks disabled');
+            }
 
             // Supply Chain dropdown functionality
             const supplyChainDropdown = document.getElementById('supplyChainDropdown');
@@ -2108,7 +2128,7 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 }
             });
 
-            // Expense Filters
+            // ===== EXPENSE FILTERS =====
             const expenseCategoryFilter = document.getElementById('expenseCategoryFilter');
             const expenseStatusFilter = document.getElementById('expenseStatusFilter');
             const expenseSearchFilter = document.getElementById('expenseSearchFilter');
@@ -2118,46 +2138,45 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             function filterExpenses() {
                 if (!expenseTable) return;
 
-                const categoryFilter = expenseCategoryFilter ? expenseCategoryFilter.value.trim() : '';
-                const statusFilter = expenseStatusFilter ? expenseStatusFilter.value.trim() : '';
-                const searchFilter = expenseSearchFilter ? expenseSearchFilter.value.trim().toLowerCase() : '';
+                const categoryFilter = expenseCategoryFilter ? expenseCategoryFilter.value.toLowerCase() : '';
+                const statusFilter = expenseStatusFilter ? expenseStatusFilter.value.toLowerCase() : '';
+                const searchFilter = expenseSearchFilter ? expenseSearchFilter.value.toLowerCase() : '';
 
                 const rows = expenseTable.querySelectorAll('tr');
-
                 let visibleCount = 0;
-                let totalAmount = 0;
-                let pendingAmount = 0;
 
-                rows.forEach(row => {
-                    // Make sure the row has enough cells before accessing
-                    if (row.cells.length < 5) return;
-
-                    const category = row.cells[1].textContent.trim();
-                    const description = row.cells[2].textContent.trim();
-                    const status = row.cells[4].textContent.trim();
-                    const amountText = row.cells[3].textContent.trim();
-                    const amount = parseFloat(amountText.replace('₱', '').replace(/,/g, '')) || 0;
+                rows.forEach((row) => {
+                    // Get data from table cells
+                    const category = (row.cells[2]?.textContent || '').toLowerCase().trim();
+                    const description = (row.cells[3]?.textContent || '').toLowerCase().trim();
+                    const statusBadge = row.querySelector('.status-badge');
+                    const status = statusBadge ? statusBadge.textContent.toLowerCase().trim() : (row.cells[5]?.textContent || '').toLowerCase().trim();
                     
-                    const categoryMatch = !categoryFilter || category === categoryFilter;
-                    const statusMatch = !statusFilter || status === statusFilter;
+                    // Check if row matches filters
+                    const categoryMatch = !categoryFilter || category.includes(categoryFilter);
+                    const statusMatch = !statusFilter || status.includes(statusFilter);
                     const searchMatch = !searchFilter || 
-                        category.toLowerCase().includes(searchFilter) ||
-                        description.toLowerCase().includes(searchFilter) ||
-                        status.toLowerCase().includes(searchFilter);
-                    
+                                    category.includes(searchFilter) ||
+                                    description.includes(searchFilter) ||
+                                    status.includes(searchFilter);
+
+                    // Show/hide row based on filter matches
                     if (categoryMatch && statusMatch && searchMatch) {
                         row.style.display = '';
                         visibleCount++;
-                        totalAmount += amount;
-                        if (status.toLowerCase() === 'pending') {
-                            pendingAmount += amount;
-                        }
                     } else {
                         row.style.display = 'none';
                     }
                 });
 
-                updateExpenseSummary(totalAmount, pendingAmount, visibleCount);
+                // REMOVED the updateExpenseSummary call here
+                // Summary cards should not change with filtering
+                
+                // Optional: Show a message when no results match filters
+                if (visibleCount === 0 && rows.length > 0) {
+                    // You could add a "no results" message here if desired
+                    console.log('No expenses match the current filters');
+                }
             }
 
             function updateExpenseSummary(totalAmount = 0, pendingAmount = 0, visibleCount = 0) {
@@ -2165,48 +2184,42 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 const pendingCard = document.querySelector('#expenses .summary-card:nth-child(2) .summary-card-value');
                 const monthlyCard = document.querySelector('#expenses .summary-card:nth-child(3) .summary-card-value');
                 
+                // Format numbers with commas and 2 decimal places
+                const formatCurrency = (amount) => {
+                    return `₱${amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+                };
+                
                 if (totalExpenseCard) {
-                    totalExpenseCard.textContent = `₱${totalAmount.toFixed(2)}`;
+                    totalExpenseCard.textContent = formatCurrency(totalAmount);
                 }
                 if (pendingCard) {
-                    pendingCard.textContent = `₱${pendingAmount.toFixed(2)}`;
+                    pendingCard.textContent = formatCurrency(pendingAmount);
                 }
                 if (monthlyCard) {
+                    // Calculate monthly average based on visible records
                     const monthlyAverage = visibleCount > 0 ? (totalAmount / visibleCount) * 30 : 0;
-                    monthlyCard.textContent = `₱${monthlyAverage.toFixed(2)}`;
+                    monthlyCard.textContent = formatCurrency(monthlyAverage);
                 }
-
-                console.log(`Filtered: ${visibleCount} records, Total ₱${totalAmount.toFixed(2)}, Pending ₱${pendingAmount.toFixed(2)}`);
             }
 
             // Attach filter events
             if (expenseCategoryFilter) {
-                expenseCategoryFilter.addEventListener('change', () => {
-                    console.log('Category filter changed:', expenseCategoryFilter.value);
-                    filterExpenses();
-                });
+                expenseCategoryFilter.addEventListener('change', filterExpenses);
             }
             if (expenseStatusFilter) {
-                expenseStatusFilter.addEventListener('change', () => {
-                    console.log('Status filter changed:', expenseStatusFilter.value);
-                    filterExpenses();
-                });
+                expenseStatusFilter.addEventListener('change', filterExpenses);
             }
             if (expenseSearchFilter) {
-                expenseSearchFilter.addEventListener('input', () => {
-                    console.log('Search filter changed:', expenseSearchFilter.value);
-                    filterExpenses();
-                });
+                expenseSearchFilter.addEventListener('input', filterExpenses);
             }
             if (clearExpenseFilters) {
                 clearExpenseFilters.addEventListener('click', () => {
-                    console.log('Clear filters clicked');
                     if (expenseCategoryFilter) expenseCategoryFilter.value = '';
                     if (expenseStatusFilter) expenseStatusFilter.value = '';
                     if (expenseSearchFilter) expenseSearchFilter.value = '';
                     filterExpenses();
                     if (typeof showNotification === 'function') {
-                        showNotification('Filters cleared', 'success');
+                        showNotification('Expense filters cleared', 'success');
                     }
                 });
             }
@@ -2218,38 +2231,65 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             // Income Filters
             const incomeSourceFilter = document.getElementById('incomeSourceFilter');
             const incomeStatusFilter = document.getElementById('incomeStatusFilter');
+            const incomeSearchFilter = document.getElementById('incomeSearchFilter');
             const clearIncomeFilters = document.getElementById('clearIncomeFilters');
             const incomeTable = document.querySelector('#income .finance-table tbody');
 
             function filterIncome() {
-                const sourceFilter = incomeSourceFilter.value;
-                const statusFilter = incomeStatusFilter.value;
+                if (!incomeTable) return;
+
+                const sourceFilter = incomeSourceFilter
+                    ? (incomeSourceFilter.value || incomeSourceFilter.options[incomeSourceFilter.selectedIndex]?.text || '').trim().toLowerCase()
+                    : '';
+
+                const statusFilter = incomeStatusFilter
+                    ? (incomeStatusFilter.value || incomeStatusFilter.options[incomeStatusFilter.selectedIndex]?.text || '').trim().toLowerCase()
+                    : '';
+
+                const searchFilter = (incomeSearchFilter && incomeSearchFilter.value) ? incomeSearchFilter.value.trim().toLowerCase() : '';
+
                 const rows = incomeTable.querySelectorAll('tr');
 
-                rows.forEach(row => {
-                    const source = row.cells[1].textContent.trim();
-                    const status = row.cells[4].textContent.trim();
-                    
+                // Debug: show active income filters and number of rows
+                console.log('filterIncome called', { sourceFilter, statusFilter, searchFilter, rows: rows.length });
+
+                rows.forEach((row, idx) => {
+                    // defensive access: columns are [ID, Date, Source, Description, Amount, Status, Actions]
+                    // Read source and description from columns, but prefer stable selectors when available
+                    const source = (row.cells[2]?.textContent || row.querySelector('.source')?.textContent || '').trim().toLowerCase();
+                    const description = (row.cells[3]?.textContent || '').trim().toLowerCase();
+                    // Prefer status badge text (handles wrapped badge elements)
+                    const status = (row.querySelector('.status-badge')?.textContent || row.cells[5]?.textContent || '').trim().toLowerCase();
+
                     const sourceMatch = !sourceFilter || source === sourceFilter;
                     const statusMatch = !statusFilter || status === statusFilter;
-                    
-                    row.style.display = sourceMatch && statusMatch ? '' : 'none';
+                    const searchMatch = !searchFilter || (
+                        source.includes(searchFilter) ||
+                        description.includes(searchFilter) ||
+                        status.includes(searchFilter)
+                    );
+
+                    row.style.display = (sourceMatch && statusMatch && searchMatch) ? '' : 'none';
+                    if (idx < 5) console.log('income row', { idx, id: row.dataset.incomeId || row.cells[0]?.textContent, source, status, visible: row.style.display !== 'none' });
                 });
 
                 updateIncomeSummary();
             }
 
             function updateIncomeSummary() {
+                if (!incomeTable) return;
+
                 const visibleRows = incomeTable.querySelectorAll('tr:not([style*="display: none"])');
                 let totalAmount = 0;
                 let pendingAmount = 0;
 
                 visibleRows.forEach(row => {
-                    const amount = parseFloat(row.cells[3].textContent.replace('₱', '').replace(',', ''));
-                    const status = row.cells[4].textContent.trim();
-                    
+                    const amountText = row.cells[4]?.textContent || '0';
+                    const amount = parseFloat(amountText.replace(/[^0-9.-]+/g, '')) || 0;
+                    const status = (row.cells[5]?.textContent || '').trim();
+
                     totalAmount += amount;
-                    if (status === 'Pending') {
+                    if (status.toLowerCase() === 'pending') {
                         pendingAmount += amount;
                     }
                 });
@@ -2257,15 +2297,38 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 console.log(`Filtered Income: Total ₱${totalAmount.toFixed(2)}, Pending ₱${pendingAmount.toFixed(2)}`);
             }
 
-            if (incomeSourceFilter) incomeSourceFilter.addEventListener('change', filterIncome);
-            if (incomeStatusFilter) incomeStatusFilter.addEventListener('change', filterIncome);
-            if (clearIncomeFilters) {
-                clearIncomeFilters.addEventListener('click', function() {
-                    console.log('Clear filters clicked');
-                    incomeSourceFilter.value = '';
-                    incomeStatusFilter.value = '';
+            if (incomeSourceFilter) {
+                ['change','input','click'].forEach(evt => incomeSourceFilter.addEventListener(evt, filterIncome));
+            }
+            if (incomeStatusFilter) {
+                ['change','input','click'].forEach(evt => {
+                    incomeStatusFilter.addEventListener(evt, () => {
+                        const val = incomeStatusFilter.value || (incomeStatusFilter.options[incomeStatusFilter.selectedIndex]?.text || '');
+                        console.log('Status filter changed (income):', val);
+                        filterIncome();
+                    });
+                });
+            }
+
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'incomeStatusFilter') {
+                    const el = e.target;
+                    const val = el.value || (el.options[el.selectedIndex]?.text || '');
+                    console.log('Document-level incomeStatusFilter change detected:', val);
                     filterIncome();
-                    showNotification('Filters cleared', 'success');
+                }
+            });
+
+            if (clearIncomeFilters) {
+                clearIncomeFilters.addEventListener('click', () => {
+                    console.log('Clear filters clicked');
+                    if (incomeSourceFilter) incomeSourceFilter.value = '';
+                    if (incomeStatusFilter) incomeStatusFilter.value = '';
+                    if (incomeSearchFilter) incomeSearchFilter.value = '';
+                    filterIncome();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Filters cleared', 'success');
+                    }
                 });
             }
 
@@ -2316,11 +2379,17 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
 
             if (invoiceStatusFilter) invoiceStatusFilter.addEventListener('change', filterInvoices);
             if (invoiceClientFilter) invoiceClientFilter.addEventListener('change', filterInvoices);
+            if (invoiceSearchFilter) invoiceSearchFilter.addEventListener('input', filterInvoices);
             if (clearInvoiceFilters) {
-                clearInvoiceFilters.addEventListener('click', function() {
-                    invoiceStatusFilter.value = '';
-                    invoiceClientFilter.value = '';
+                clearInvoiceFilters.addEventListener('click', () => {
+                    console.log('Clear filters clicked');
+                    if (invoiceStatusFilter) invoiceStatusFilter.value = '';
+                    if (invoiceClientFilter) invoiceClientFilter.value = '';
+                    if (invoiceSearchFilter) invoiceSearchFilter.value = '';
                     filterInvoices();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Filters cleared', 'success');
+                    }
                 });
             }
 
@@ -2368,10 +2437,14 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
             if (budgetCategoryFilter) budgetCategoryFilter.addEventListener('change', filterBudget);
             if (budgetProgressFilter) budgetProgressFilter.addEventListener('change', filterBudget);
             if (clearBudgetFilters) {
-                clearBudgetFilters.addEventListener('click', function() {
-                    budgetCategoryFilter.value = '';
-                    budgetProgressFilter.value = '';
+                clearBudgetFilters.addEventListener('click', () => {
+                    console.log('Clear filters clicked');
+                    if (budgetCategoryFilter) budgetCategoryFilter.value = '';
+                    if (budgetProgressFilter) budgetProgressFilter.value = '';
                     filterBudget();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Filters cleared', 'success');
+                    }
                 });
             }
 
@@ -2574,6 +2647,18 @@ $total_budget_spent = array_sum(array_column($budget, 'spent'));
                 status: document.getElementById('expenseStatusFilter') ? 'Yes' : 'No',
                 clear: document.getElementById('clearExpenseFilters') ? 'Yes' : 'No'
             });
+
+            // Log filter option details to help debugging empty .value issues
+            try {
+                if (expenseCategoryFilter) {
+                    console.log('expenseCategoryFilter options:', Array.from(expenseCategoryFilter.options).map(o => ({ text: o.text, value: o.value }))); 
+                }
+                if (expenseStatusFilter) {
+                    console.log('expenseStatusFilter options:', Array.from(expenseStatusFilter.options).map(o => ({ text: o.text, value: o.value }))); 
+                }
+            } catch (e) {
+                console.error('Error logging filter options:', e);
+            }
             
             // Debug: Check delete button data attributes
             const deleteButtons = document.querySelectorAll('.delete-expense-btn');
