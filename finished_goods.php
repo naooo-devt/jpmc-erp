@@ -60,9 +60,11 @@ $hr_functions = [];
         }
 
         .employee-table {
-            width: 1800px;
+            width: 100%;
+            max-width: 900px;
             border-collapse: collapse;
             background: var(--white);
+            font-size: 0.85rem;
         }
 
         .employee-table th {
@@ -266,6 +268,14 @@ $hr_functions = [];
         }
 
         /* Responsive Design */
+        @media (max-width: 950px) {
+            .employee-table,
+            .table-container {
+                max-width: 100vw;
+                width: 100vw;
+            }
+        }
+
         @media (max-width: 768px) {
             .system-admin-header {
                 flex-direction: column;
@@ -288,11 +298,12 @@ $hr_functions = [];
 
             .employee-table {
                 font-size: 0.75rem;
+                max-width: 100vw;
             }
 
-            .employee-table th,
-            .employee-table td {
-                padding: 0.5rem;
+            .table-container {
+                max-width: 100vw;
+                padding: 0 2px;
             }
 
             .employee-actions {
@@ -308,11 +319,11 @@ $hr_functions = [];
 
         /* Table Scroll */
         .table-container {
-            max-height: 600px;
+            max-width: 950px;
+            margin: 0 auto;
+            max-height: 400px;
             overflow-y: auto;
-            overflow-x: unset;
-            scrollbar-width: thin;
-            scrollbar-color: var(--gray) var(--light-gray);
+            overflow-x: auto;
         }
 
         .table-scroll-x {
@@ -322,9 +333,11 @@ $hr_functions = [];
         }
 
         .employee-table {
-            width: 1800px;
+            width: 100%;
+            max-width: 900px;
             border-collapse: collapse;
             background: var(--white);
+            font-size: 0.85rem;
         }
 
         .table-container::-webkit-scrollbar {
