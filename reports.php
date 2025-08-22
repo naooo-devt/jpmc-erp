@@ -19,6 +19,34 @@ $role = htmlspecialchars($_SESSION['role']);
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="images/logo.png">
+    <style>
+        /* ...existing code... */
+        .summary-item {
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin: 0 1rem 1rem 0;
+            display: inline-block;
+            min-width: 220px;
+            background: #f8fafc;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            text-align: center;
+            vertical-align: top;
+            transition: background 0.2s;
+        }
+        .summary-green {
+            background: #e6fbe7 !important;
+            border: 2px solid #22c55e;
+        }
+        .summary-yellow {
+            background: #fffbe6 !important;
+            border: 2px solid #facc15;
+        }
+        .summary-red {
+            background: #fee2e2 !important;
+            border: 2px solid #ef4444;
+        }
+        /* ...existing code... */
+    </style>
 </head>
 <body>
     <!-- Sidebar Navigation -->
@@ -179,19 +207,28 @@ $role = htmlspecialchars($_SESSION['role']);
                 }
             }
             ?>
-            <div class="summary-item">
+            <!-- Helper function for color class (updated logic) -->
+            <?php
+            function getSummaryColor($bags) {
+                if ($bags <= 2) return 'summary-red';
+                if ($bags >= 3 && $bags <= 5) return 'summary-yellow';
+                if ($bags >= 6) return 'summary-green';
+                return '';
+            }
+            ?>
+            <div class="summary-item <?= getSummaryColor($total_inventory) ?>">
                 <h4>Total Inventory</h4>
                 <p><?= $total_inventory ?> Bags</p>
             </div>
-            <div class="summary-item">
+            <div class="summary-item <?= getSummaryColor($materials_in) ?>">
                 <h4>Materials In</h4>
                 <p><?= $materials_in ?> Bags</p>
             </div>
-            <div class="summary-item">
+            <div class="summary-item <?= getSummaryColor($materials_out) ?>">
                 <h4>Materials Out</h4>
                 <p><?= $materials_out ?> Bags</p>
             </div>
-            <div class="summary-item">
+            <div class="summary-item <?= getSummaryColor($low_stock_items) ?>">
                 <h4>Low Stock Items</h4>
                 <p><?= $low_stock_items ?> Items</p>
             </div>
