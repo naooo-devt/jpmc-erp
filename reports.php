@@ -601,6 +601,9 @@ $role = htmlspecialchars($_SESSION['role']);
     <!-- Reports-specific modals go here -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="assets/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -929,6 +932,91 @@ $role = htmlspecialchars($_SESSION['role']);
             });
         }
         // You can add similar filtering for other sections if needed
+    });
+
+    // Generate PDF for Inventory Summary
+    document.getElementById('generateReportBtnPDF').addEventListener('click', function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text('Inventory Summary Report', 14, 18);
+        doc.autoTable({
+            startY: 28,
+            html: '#inventorySummarySection .report-table table',
+            theme: 'grid',
+            headStyles: { fillColor: [37, 99, 235] },
+            styles: { fontSize: 10 }
+        });
+        doc.save('inventory_summary.pdf');
+    });
+
+    // Export Excel for Inventory Summary
+    document.getElementById('generateReportBtnExcel').addEventListener('click', function() {
+        const table = document.querySelector('#inventorySummarySection .report-table table');
+        if (!table) return;
+        const wb = XLSX.utils.table_to_book(table, {sheet:"Inventory Summary"});
+        XLSX.writeFile(wb, 'inventory_summary.xlsx');
+    });
+
+    // Generate PDF for History Report (active section)
+    document.getElementById('generateHistoryReportBtnPDF').addEventListener('click', function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let activeSection = null;
+        let title = 'History Report';
+
+        if (document.getElementById('historyFinanceSection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyFinanceSection .report-table table');
+            title = 'Finance History Report';
+        } else if (document.getElementById('historyHRSection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyHRSection .report-table table');
+            title = 'Human Resources History Report';
+        } else if (document.getElementById('historyInventorySection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyInventorySection .report-table table');
+            title = 'Inventory History Report';
+        } else if (document.getElementById('historyFeedbackSection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyFeedbackSection .report-table table');
+            title = 'Customer Feedback History Report';
+        }
+
+        doc.setFontSize(18);
+        doc.text(title, 14, 18);
+
+        if (activeSection) {
+            doc.autoTable({
+                startY: 28,
+                html: activeSection,
+                theme: 'grid',
+                headStyles: { fillColor: [37, 99, 235] },
+                styles: { fontSize: 10 }
+            });
+        }
+
+        doc.save(title.replace(/ /g, '_').toLowerCase() + '.pdf');
+    });
+
+    // Export Excel for History Report (active section)
+    document.getElementById('generateHistoryReportBtnExcel').addEventListener('click', function() {
+        let activeSection = null;
+        let filename = 'history_report.xlsx';
+
+        if (document.getElementById('historyFinanceSection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyFinanceSection .report-table table');
+            filename = 'finance_history.xlsx';
+        } else if (document.getElementById('historyHRSection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyHRSection .report-table table');
+            filename = 'hr_history.xlsx';
+        } else if (document.getElementById('historyInventorySection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyInventorySection .report-table table');
+            filename = 'inventory_history.xlsx';
+        } else if (document.getElementById('historyFeedbackSection').style.display !== 'none') {
+            activeSection = document.querySelector('#historyFeedbackSection .report-table table');
+            filename = 'customer_feedback_history.xlsx';
+        }
+        if (activeSection) {
+            const wb = XLSX.utils.table_to_book(activeSection, {sheet:"History Report"});
+            XLSX.writeFile(wb, filename);
+        }
     });
 
     // ...existing code...
